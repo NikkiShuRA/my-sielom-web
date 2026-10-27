@@ -216,9 +216,10 @@ svg { flex-shrink: 0; }
 .segmented__btn.is-active { color: var(--c-text); }
 #viewSwitch .segmented__btn.is-active { color: var(--c-on-accent); }
 
-.segmented--tabs { flex: 1; min-width: 0; height: 40px; background: var(--c-surface); box-shadow: none; }
-.segmented--tabs .segmented__thumb { background: var(--c-bg); box-shadow: var(--sh-xs); }
-.segmented--tabs .segmented__btn { padding: 0 8px; font-size: 13px; }
+.segmented--tabs { flex: 1; min-width: 0; height: 40px; background: var(--c-surface); box-shadow: none; overflow-x: auto; scrollbar-width: none; }
+.segmented--tabs::-webkit-scrollbar { display: none; }
+.segmented--tabs .segmented__btn { flex: 1 1 auto; min-width: max-content; padding: 0 12px; font-size: 13px; white-space: nowrap; }
+.segmented--tabs .segmented__btn.is-active { color: var(--c-on-accent); }
 
 /* ---------- Аватары ---------- */
 .avatar {
@@ -478,6 +479,17 @@ svg { flex-shrink: 0; }
 }
 .list__empty b { font-size: 15px; color: var(--c-text); }
 
+.list-sep {
+  padding: 10px 14px 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.list-sep span {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c-muted);
+}
+.list-sep::before, .list-sep::after {
+  content: ""; flex: 1; height: 1px; background: var(--c-line);
+}
+
 .entity {
   display: flex; align-items: center; gap: 12px;
   min-height: 52px;
@@ -647,9 +659,14 @@ svg { flex-shrink: 0; }
 .day.is-today .lesson:hover { box-shadow: var(--sh-sm); }
 
 .lesson.is-now { background: var(--c-bg); box-shadow: 0 0 0 2px var(--c-accent-strong), var(--sh-sm); }
+.lesson.is-now::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 4px;
+  background: var(--c-line-strong);
+}
 .lesson.is-now::after {
-  content: ""; position: absolute; left: 0; bottom: 0;
-  width: var(--progress, 0%); height: 3px;
+  content: ""; position: absolute; left: 0; bottom: 0; z-index: 1;
+  width: var(--progress, 0%); height: 4px;
   background: var(--c-accent-strong);
   border-radius: 0 3px 3px 0;
 }

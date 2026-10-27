@@ -253,12 +253,81 @@
     return `<li class="list__empty"><b>${esc(title)}</b>${hint ? `<span>${esc(hint)}</span>` : ""}</li>`;
   }
 
+  function entityItemHTML(e) {
+    const key = `${e.type}:${e.id}`;
+    const fav = state.favourites.has(key);
+    const isSelected = state.selected.kind === e.type && state.selected.id === e.id;
+    const isNav = e.type === "division" || e.type === "course";
+    const divAttr = e.divisionId ? ` data-division-id="${esc(e.divisionId)}"` : "";
+    const attrs = `class="entity entity--${e.type}${isSelected ? " is-selected" : ""}" data-type="${e.type}" data-id="${esc(e.id)}" data-title="${esc(e.title)}"${divAttr} tabindex="0"${isSelected ? ' aria-current="true"' : ""}`;
+    const tail = isNav
+      ? `<span class="entity__chev">${ICON.chevron}</span>`
+      : `<button class="entity__fav" data-fav="${esc(key)}" aria-pressed="${fav}" aria-label="${fav ? "Убрать из избранного" : "В избранное"}" title="${fav ? "Убрать из избранного" : "В избранное"}">${ICON.bookmark}</button>`;
+    let lead = "", text;
+    if (e.type === "teacher") {
+      lead = avatarHTML(e.id);
+      text = `<span class="entity__title">${esc(e.parts[0])}</span><span class="entity__hint">${esc(e.parts.slice(1).join(" "))}</span>`;
+    } else if (e.type === "division") {
+      lead = `<span class="entity__badge">${esc(e.numPart || "—")}</span>`;
+      text = `<span class="entity__title">${esc(e.addrPart || e.title)}</span>`;
+    } else if (e.type === "course") {
+      lead = `<span class="entity__badge">${esc(e.num)}</span>`;
+      text = `<span class="entity__title">${esc(e.title)}</span><span class="entity__hint">${esc(e.hint)}</span>`;
+    } else if (e.type === "room") {
+      lead = `<span class="entity__badge">${esc(e.title)}</span>`;
+      text = `<span class="entity__title">Кабинет ${esc(e.title)}</span><span class="entity__hint">${esc(e.hint)}</span>`;
+    } else {
+      text = `<span class="entity__title">${esc(e.title)}</span>${e.hint ? `<span class="entity__hint">${esc(e.hint)}</span>` : ""}`;
+    }
+    return `<li ${attrs}>${lead}<span class="entity__text">${text}</span>${tail}</li>`;
+  }
+
+  function buildFavItems() {
+    const byType = { teacher: [], group: [], room: [] };
+    for (const key of state.favourites) {
+      const colon = key.indexOf(":");
+      const type  = key.slice(0, colon);
+      const id    = key.slice(colon + 1);
+      if (type === "teacher") {
+        byType.teacher.push({ type: "teacher", id, title: id, parts: id.split(/\s+/), divisionId: null });
+      } else if (type === "group") {
+        const g = state.groups.find((x) => x.id_1c === id);
+        if (g) {
+          const div = divisionById(g.divisionId);
+          byType.group.push({ type: "group", id: g.id_1c, title: g.name, hint: div ? divisionDisplayLabel(div) : "", divisionId: g.divisionId });
+        }
+      } else if (type === "room") {
+        byType.room.push({ type: "room", id, title: id, divisionId: null });
+      }
+    }
+    Object.values(byType).forEach((arr) => arr.sort((a, b) => naturalSort(a.title, b.title)));
+    return byType;
+  }
+
   function renderList() {
     const list = $("#list");
     const needle = state.query.trim().toLowerCase();
-    let items = entitiesForTab();
 
-    if (state.onlyFav && state.divisionId) items = items.filter((e) => state.favourites.has(`${e.type}:${e.id}`));
+    if (state.onlyFav) {
+      if (state.error && !state.divisions.length) {
+        list.innerHTML = listMessage("Не удалось загрузить данные", "Проверьте соединение и обновите страницу");
+        return;
+      }
+      const byType = buildFavItems();
+      const SEP_LABEL = { teacher: "Преподаватели", group: "Группы", room: "Кабинеты" };
+      let html = "";
+      for (const type of ["teacher", "group", "room"]) {
+        let items = byType[type];
+        if (needle) items = items.filter((e) => `${e.title} ${e.hint || ""}`.toLowerCase().includes(needle));
+        if (!items.length) continue;
+        html += `<li class="list-sep" aria-hidden="true"><span>${esc(SEP_LABEL[type])}</span></li>`;
+        html += items.map((e) => entityItemHTML(e)).join("");
+      }
+      list.innerHTML = html || listMessage("В избранном пусто", needle ? "Нет совпадений" : "Нажмите на закладку рядом с группой или преподавателем");
+      return;
+    }
+
+    let items = entitiesForTab();
     if (needle) items = items.filter((e) => `${e.title} ${e.hint || ""}`.toLowerCase().includes(needle));
 
     if (state.error && !state.divisions.length) {
@@ -269,39 +338,11 @@
       const loading = !state.divisions.length || (state.divisionId && state.tab !== "group" && !state.divisionLoaded);
       list.innerHTML = loading
         ? '<li class="sk sk--row"></li>'.repeat(6)
-        : state.onlyFav ? listMessage("В избранном пусто", "Нажмите на закладку рядом с группой, преподавателем или кабинетом")
         : listMessage("Ничего не найдено", needle ? "Попробуйте изменить запрос" : "");
       return;
     }
 
-    list.innerHTML = items.map((e) => {
-      const key = `${e.type}:${e.id}`;
-      const fav = state.favourites.has(key);
-      const isSelected = state.selected.kind === e.type && state.selected.id === e.id;
-      const isNav = e.type === "division" || e.type === "course";
-      const attrs = `class="entity entity--${e.type}${isSelected ? " is-selected" : ""}" data-type="${e.type}" data-id="${esc(e.id)}" data-title="${esc(e.title)}" tabindex="0"${isSelected ? ' aria-current="true"' : ""}`;
-      const tail = isNav
-        ? `<span class="entity__chev">${ICON.chevron}</span>`
-        : `<button class="entity__fav" data-fav="${esc(key)}" aria-pressed="${fav}" aria-label="${fav ? "Убрать из избранного" : "В избранное"}" title="${fav ? "Убрать из избранного" : "В избранное"}">${ICON.bookmark}</button>`;
-
-      let lead = "", text;
-      if (e.type === "teacher") {
-        lead = avatarHTML(e.id);
-        text = `<span class="entity__title">${esc(e.parts[0])}</span><span class="entity__hint">${esc(e.parts.slice(1).join(" "))}</span>`;
-      } else if (e.type === "division") {
-        lead = `<span class="entity__badge">${esc(e.numPart || "—")}</span>`;
-        text = `<span class="entity__title">${esc(e.addrPart || e.title)}</span>`;
-      } else if (e.type === "course") {
-        lead = `<span class="entity__badge">${esc(e.num)}</span>`;
-        text = `<span class="entity__title">${esc(e.title)}</span><span class="entity__hint">${esc(e.hint)}</span>`;
-      } else if (e.type === "room") {
-        lead = `<span class="entity__badge">${esc(e.title)}</span>`;
-        text = `<span class="entity__title">Кабинет ${esc(e.title)}</span><span class="entity__hint">${esc(e.hint)}</span>`;
-      } else {
-        text = `<span class="entity__title">${esc(e.title)}</span>`;
-      }
-      return `<li ${attrs}>${lead}<span class="entity__text">${text}</span>${tail}</li>`;
-    }).join("");
+    list.innerHTML = items.map((e) => entityItemHTML(e)).join("");
   }
 
   function renderCrumb() {
@@ -912,7 +953,9 @@
       return;
     }
 
-    state.selected = { kind: type, id: item.dataset.id, title: item.dataset.title, divisionId: state.divisionId };
+    const selDivId = item.dataset.divisionId || state.divisionId;
+    if (item.dataset.divisionId) state.divisionId = item.dataset.divisionId;
+    state.selected = { kind: type, id: item.dataset.id, title: item.dataset.title, divisionId: selDivId };
     state.expanded.clear();
     store.set("sielom.selection", state.selected);
     setDrawer(false);
