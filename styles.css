@@ -763,7 +763,8 @@ svg { flex-shrink: 0; }
 .strip {
   position: sticky; top: 0; z-index: 3;
   display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
-  padding: 16px 0 10px;
+  padding: 16px 24px 10px;
+  margin: 0 -24px;
   background: linear-gradient(var(--c-bg) 85%, transparent);
 }
 .strip__day {
@@ -981,7 +982,7 @@ svg { flex-shrink: 0; }
   .app__body { display: block; }
   .week-wrap { height: 100%; border-radius: var(--r-xl); }
   .dayview { padding: 0 12px 32px; }
-  .strip { padding-top: 12px; gap: 4px; }
+  .strip { padding: 12px 12px 10px; margin: 0 -12px; gap: 4px; }
   .dv-title { font-size: 24px; }
   .tl-row { grid-template-columns: 44px 14px 1fr; column-gap: 8px; }
   .tl-start { font-size: 14px; }
