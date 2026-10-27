@@ -10,9 +10,10 @@
     try { const t = JSON.parse(localStorage.getItem("sielom.theme")); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
   </script>
   <title>СИЭУиП — Расписание</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Wix+Madefor+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://sielom.ru" crossorigin>
+  <link rel="preload" href="assets/fonts/inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/wix-madefor-display-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -140,6 +141,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

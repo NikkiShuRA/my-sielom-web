@@ -325,7 +325,7 @@
       <button class="pill-btn" id="themeBtn" title="Сменить тему (D)" aria-label="Сменить тему">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
       </button>
-      <a class="pill-btn pill-btn--accent" href="https://my-sielom-web.vercel.app/" target="_blank" rel="noopener">Открыть</a>
+      <a class="pill-btn pill-btn--accent" href="https://nikkishura.github.io/my-sielom-web/" target="_blank" rel="noopener">Открыть</a>
     </div>
   </nav>
 
@@ -341,7 +341,7 @@
         <h1 class="h-xl rv">Расписание,<br>которое <span class="mark">понимает время</span></h1>
         <p class="lead rv">Неофициальный клиент расписания СИЭУиП. Те же данные, что на sielom.ru, — но с живой текущей парой, тёмной темой и нормальной мобильной версией.</p>
         <div class="hero__cta rv">
-          <a class="pill-btn pill-btn--accent" href="https://my-sielom-web.vercel.app/" target="_blank" rel="noopener">Открыть расписание →</a>
+          <a class="pill-btn pill-btn--accent" href="https://nikkishura.github.io/my-sielom-web/" target="_blank" rel="noopener">Открыть расписание →</a>
           <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">GitHub</a>
         </div>
         <div class="hero__stage rv">
@@ -557,10 +557,10 @@
     <section class="slide final" id="s-final" data-title="Попробовать">
       <div class="slide__inner">
         <span class="eyebrow rv">Попробуйте прямо сейчас</span>
-        <h2 class="h-xl rv">my-sielom-web<br><span class="mark">.vercel.app</span></h2>
-        <div class="qr rv" id="qr" role="img" aria-label="QR-код со ссылкой на my-sielom-web.vercel.app"></div>
+        <h2 class="h-xl rv">nikkishura.github.io<br><span class="mark">/my-sielom-web</span></h2>
+        <div class="qr rv" id="qr" role="img" aria-label="QR-код со ссылкой на расписание"></div>
         <div class="hero__cta rv">
-          <a class="pill-btn pill-btn--accent" href="https://my-sielom-web.vercel.app/" target="_blank" rel="noopener">Открыть расписание →</a>
+          <a class="pill-btn pill-btn--accent" href="https://nikkishura.github.io/my-sielom-web/" target="_blank" rel="noopener">Открыть расписание →</a>
           <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">Исходный код</a>
         </div>
         <div class="roadmap rv"><span>Скоро: уведомления о начале пары</span><span>Экспорт в календарь</span><span>PWA и офлайн</span></div>
@@ -699,7 +699,7 @@
     // ---------- QR ----------
     try {
       const qr = qrcode(0, "M");
-      qr.addData("https://my-sielom-web.vercel.app/");
+      qr.addData("https://nikkishura.github.io/my-sielom-web/");
       qr.make();
       $("#qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
     } catch { $("#qr").hidden = true; }

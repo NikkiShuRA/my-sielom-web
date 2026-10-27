@@ -2,8 +2,9 @@
   const $ = (s, root = document) => root.querySelector(s);
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 
-  const API = "/schedule/api";
-  const STRAPI = "/strapi/api";
+  // Оба API отдают CORS для любого Origin, поэтому ходим напрямую — сайт работает на любом статическом хостинге
+  const API = "https://sielom.ru/schedule/api";
+  const STRAPI = "https://strapi.sielom.ru/api";
   const DEFAULT_SELECTION = { kind: "group", id: "f961b5a2-26f7-11ee-9f9a-c08a77b51a65", divisionId: "2b807ff8-81a9-11f0-9fba-e029e7085e0b" };
   const WEEKDAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
   const WEEKDAYS_FULL = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];

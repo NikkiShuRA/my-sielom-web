@@ -7,7 +7,7 @@
 **Неофициальный клиент расписания Сургутского института экономики, управления и права.**<br>
 Те же данные, что на [sielom.ru/timetable](https://sielom.ru/timetable/), но с живой текущей парой, тёмной темой и нормальной мобильной версией.
 
-[**Открыть расписание →**](https://my-sielom-web.vercel.app/) · [Презентация проекта](https://nikkishura.github.io/my-sielom-web/)
+[**Открыть расписание →**](https://nikkishura.github.io/my-sielom-web/) · [Презентация проекта](https://nikkishura.github.io/my-sielom-web/about/)
 
 <img src="docs/screenshots/week-light.webp" alt="Расписание группы на неделю" width="900">
 
@@ -110,24 +110,24 @@
 ## Как это устроено
 
 ```
-Браузер                       Vercel                         sielom.ru
-index.html  ──/schedule/*──▶  api/proxy.js  ──────────────▶  sielom.ru/schedule/api
-styles.css  ──/strapi/*────▶  (обход CORS)  ──────────────▶  strapi.sielom.ru/api
-app.js
+GitHub Pages (статика)        Браузер                       sielom.ru
+index.html, app.js,   ──────▶  app.js  ──────────────────▶  sielom.ru/schedule/api
+styles.css, шрифты             (fetch напрямую)  ────────▶  strapi.sielom.ru/api
 ```
 
 - **Без фреймворков и сборки:** HTML, CSS и ванильный JS, около 110 КБ исходников в трёх файлах, ноль npm-зависимостей
 - **Данные напрямую из официального API**, поэтому расписание всегда такое же актуальное, как на sielom.ru
-- **Один прокси:** serverless-функция [`api/proxy.js`](api/proxy.js) на Vercel пробрасывает запросы к `sielom.ru` и `strapi.sielom.ru`, иначе браузер не пустит их из-за CORS
+- **Без своего бэкенда:** оба API отдают CORS-заголовки, поэтому браузер обращается к ним напрямую. Сайт — чистая статика на GitHub Pages: бесплатно, без «засыпания» и открывается из РФ
+- **Шрифты лежат в репозитории** ([`fonts.css`](fonts.css), [`assets/fonts/`](assets/fonts/)), никаких запросов к Google
 - **Кэш:** одинаковые запросы в рамках сессии не повторяются, список сотрудников с фотографиями хранится в `localStorage` сутки
 
 ```
 ├── index.html        разметка приложения
 ├── styles.css        стили и токены тем
 ├── app.js            вся логика: API, рендер, навигация, избранное
-├── api/proxy.js      serverless-прокси для Vercel
-├── server.js         локальный сервер: статика + прокси с кэшем на 5 минут
-├── vercel.json       правила перезаписи /schedule/* и /strapi/*
+├── fonts.css         локальные шрифты Inter и Wix Madefor Display
+├── server.js         локальный сервер для разработки
+├── .github/workflows/pages.yml  деплой на GitHub Pages
 └── docs/             презентация проекта (GitHub Pages)
 ```
 
@@ -141,17 +141,13 @@ cd my-sielom-web
 node server.js
 ```
 
-Откроется на `http://localhost:5500`. `server.js` отдаёт статику и проксирует запросы к API так же, как это делает Vercel в продакшене.
+Откроется на `http://localhost:5500`. Подойдёт и любой другой статический сервер.
 
-Можно запустить и через [Vercel CLI](https://vercel.com/docs/cli), тогда прокси будет работать ровно как на проде:
-
-```bash
-vercel dev
-```
+Каждый пуш в `master` автоматически публикуется на GitHub Pages: приложение в корне, презентация из [`docs/`](docs/) — в `/about/`.
 
 ## Презентация
 
-В папке [`docs/`](docs/) лежит интерактивная веб-презентация проекта: демо живой пары с ползунком времени, сравнение светлой и тёмной темы, сравнение с официальным сайтом, QR-код на приложение. Она публикуется через GitHub Pages: **[nikkishura.github.io/my-sielom-web](https://nikkishura.github.io/my-sielom-web/)**.
+В папке [`docs/`](docs/) лежит интерактивная веб-презентация проекта: демо живой пары с ползунком времени, сравнение светлой и тёмной темы, сравнение с официальным сайтом, QR-код на приложение. Она публикуется вместе с приложением: **[nikkishura.github.io/my-sielom-web/about](https://nikkishura.github.io/my-sielom-web/about/)**.
 
 Листать можно клавишами `↓` / `Space`, тема переключается на `D`, как и в самом приложении.
 

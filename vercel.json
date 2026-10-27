@@ -1,6 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/schedule/:path*", "destination": "/api/proxy" },
-    { "source": "/strapi/:path*",   "destination": "/api/proxy" }
-  ]
-}
