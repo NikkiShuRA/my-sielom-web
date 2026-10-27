@@ -386,15 +386,19 @@
       ? (l.teacher ? abbName(l.teacher.name) : "—")
       : roomOf(l);
 
-    if (sameRoom && lessons.length > 1 && !roomMode) {
+    if (lessons.length > 1) {
       const l0 = lessons[0];
-      const rows = lessons.map((l) => {
-        const who = whoLabel(l, full);
-        const sg = l.subgroup ? `<span class="sg" title="${esc(l.subgroup)} подгруппа">${esc(l.subgroup)}</span>` : "";
-        const av = withAvatar && l.teacher ? avatarHTML(l.teacher.name, "avatar avatar--xs") : "";
-        return `<span class="who-row">${sg}${av}<span class="who" title="${esc(who)}">${esc(who)}</span></span>`;
-      }).join("");
-      return `<ul class="parts"><li class="part"><span class="room${l0.note ? " is-changed" : ""}">${esc(roomOf(l0))}</span><span class="who-stack">${rows}</span></li></ul>`;
+      const sameTeacher = roomMode && lessons.every((l) => l.teacher?.name === l0.teacher?.name);
+      if ((sameRoom && !roomMode) || sameTeacher) {
+        const rows = lessons.map((l) => {
+          const who = whoLabel(l, full);
+          const sg = l.subgroup ? `<span class="sg" title="${esc(l.subgroup)} подгруппа">${esc(l.subgroup)}</span>` : "";
+          const av = withAvatar && l.teacher ? avatarHTML(l.teacher.name, "avatar avatar--xs") : "";
+          return `<span class="who-row">${sg}${av}<span class="who" title="${esc(who)}">${esc(who)}</span></span>`;
+        }).join("");
+        const badge = roomMode ? primaryOf(l0) : roomOf(l0);
+        return `<ul class="parts"><li class="part"><span class="room${l0.note ? " is-changed" : ""}">${esc(badge)}</span><span class="who-stack">${rows}</span></li></ul>`;
+      }
     }
 
     return `<ul class="parts">${lessons.map((l) => {
