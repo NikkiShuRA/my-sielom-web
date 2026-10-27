@@ -962,18 +962,19 @@
 
   function placeHTML(l) {
     const div = divisionInfo(l.division);
+    const addr = div?.address ? div.address.replace(/,(\S)/g, ", $1") : null;
     return `<div class="place${l.note ? " is-changed" : ""}">
       <span class="place__room">${esc(roomOf(l))}</span>
       <div class="place__text">
         <span class="place__corps">${div ? esc("Корпус " + div.corps) : "Кабинет"}</span>
-        ${div?.address ? `<span class="place__addr">${esc(div.address)}</span>` : ""}
+        ${addr ? `<span class="place__addr">${esc(addr)}</span>` : ""}
       </div>
     </div>`;
   }
 
   function personHTML(teacher, label = "") {
     if (!teacher) return "";
-    return `<div class="person">
+    return `<div class="person nav-item" data-nav-type="teacher" data-nav-id="${esc(teacher.name)}" data-nav-title="${esc(teacher.name)}" tabindex="0" role="button" aria-label="Расписание: ${esc(teacher.name)}">
       ${avatarHTML(teacher.name, "avatar avatar--lg")}
       <div class="person__text">
         ${label ? `<span class="person__label">${esc(label)}</span>` : ""}
@@ -1026,8 +1027,9 @@
     let body;
     if (!multi) {
       // Обычная пара
+      const grpMeta = l0.group ? state.groups.find((g) => g.name === l0.group.name) : null;
       const facts = [
-        l0.group ? `<span class="fact"><span>Группа</span> ${esc(l0.group.name)}</span>` : "",
+        l0.group ? `<span class="fact${grpMeta ? " nav-item" : ""}"${grpMeta ? ` data-nav-type="group" data-nav-id="${esc(grpMeta.id_1c)}" data-nav-title="${esc(l0.group.name)}" tabindex="0" role="button" aria-label="Расписание: ${esc(l0.group.name)}"` : ""}><span>Группа</span> ${esc(l0.group.name)}</span>` : "",
         l0.subgroup ? `<span class="fact"><span>Подгруппа</span> ${esc(l0.subgroup)}</span>` : "",
       ].join("");
       body = section("Где", placeHTML(l0))
@@ -1053,7 +1055,8 @@
       body = (sameRoom ? section("Где", placeHTML(l0)) : "")
         + section(allSameGroup ? "Подгруппы" : "Группы", `<div class="sg-list">${lessons.map((l) => {
           const div = divisionInfo(l.division);
-          return `<div class="sg-row">
+          const rowNav = l.teacher ? ` nav-item" data-nav-type="teacher" data-nav-id="${esc(l.teacher.name)}" data-nav-title="${esc(l.teacher.name)}" tabindex="0" role="button"` : `"`;
+          return `<div class="sg-row${rowNav}>
             ${l.teacher ? avatarHTML(l.teacher.name, "avatar") : `<span class="sg sg--lg">${esc(sgMark(l))}</span>`}
             <div class="sg-row__text">
               <span class="sg-row__label">${esc(partLabel(l))}${l.subgroup && !allSameGroup && l.group ? ` · ${esc(l.group.name)}` : ""}</span>
@@ -1068,9 +1071,26 @@
     $("#lessonModal").showModal();
   }
 
-  // Закрытие модалки кликом по backdrop
+  // Закрытие модалки кликом по backdrop; навигация по nav-item
   $("#lessonModal").addEventListener("click", (e) => {
-    if (e.target === e.currentTarget) e.currentTarget.close();
+    if (e.target === e.currentTarget) { e.currentTarget.close(); return; }
+    const nav = e.target.closest(".nav-item[data-nav-type]");
+    if (nav) {
+      const type = nav.dataset.navType;
+      const id = nav.dataset.navId;
+      const title = nav.dataset.navTitle || id;
+      const g = type === "group" ? state.groups.find((x) => x.id_1c === id) : null;
+      e.currentTarget.close();
+      state.selected = { kind: type, id, title, divisionId: g ? g.divisionId : state.divisionId };
+      state.expanded.clear();
+      store.set("sielom.selection", state.selected);
+      refreshWeek();
+    }
+  });
+  $("#lessonModal").addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.closest(".nav-item[data-nav-type]")) {
+      e.preventDefault(); e.target.closest(".nav-item[data-nav-type]").click();
+    }
   });
 
   // ---------- Drag-to-scroll ----------

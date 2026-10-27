@@ -901,6 +901,11 @@ svg { flex-shrink: 0; }
 .place__corps { font-weight: 700; }
 .place__addr { font-size: 13px; color: var(--c-muted); }
 
+.nav-item { cursor: pointer; transition: opacity .15s; }
+.nav-item:hover { opacity: .72; }
+.nav-item:active { opacity: .5; }
+.nav-item:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 3px; border-radius: var(--r-sm); }
+
 .person { display: flex; align-items: center; gap: 14px; }
 .person__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .person__label { font-size: 12.5px; color: var(--c-muted); }
