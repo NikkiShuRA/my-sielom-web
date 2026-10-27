@@ -334,11 +334,23 @@
   function partsHTML(lessons, full) {
     const sameRoom = lessons.every((l) => roomOf(l) === roomOf(lessons[0]));
     const withAvatar = full && state.selected.kind === "group";
-    return `<ul class="parts">${lessons.map((l, i) => {
+
+    if (sameRoom && lessons.length > 1) {
+      const l0 = lessons[0];
+      const rows = lessons.map((l) => {
+        const who = whoLabel(l, full);
+        const sg = l.subgroup ? `<span class="sg" title="${esc(l.subgroup)} подгруппа">${esc(l.subgroup)}</span>` : "";
+        const av = withAvatar && l.teacher ? avatarHTML(l.teacher.name, "avatar avatar--xs") : "";
+        return `<span class="who-row">${sg}${av}<span class="who" title="${esc(who)}">${esc(who)}</span></span>`;
+      }).join("");
+      return `<ul class="parts"><li class="part"><span class="room${l0.note ? " is-changed" : ""}">${esc(roomOf(l0))}</span><span class="who-stack">${rows}</span></li></ul>`;
+    }
+
+    return `<ul class="parts">${lessons.map((l) => {
       const who = whoLabel(l, full);
       return `<li class="part">
         ${lessons.length > 1 && l.subgroup ? `<span class="sg" title="${esc(l.subgroup)} подгруппа">${esc(l.subgroup)}</span>` : ""}
-        <span class="room${l.note ? " is-changed" : ""}${sameRoom && i > 0 ? " is-ghost" : ""}">${esc(roomOf(l))}</span>
+        <span class="room${l.note ? " is-changed" : ""}">${esc(roomOf(l))}</span>
         ${withAvatar && l.teacher ? avatarHTML(l.teacher.name, "avatar avatar--xs") : ""}
         <span class="who" title="${esc(who)}">${esc(who)}</span>
       </li>`;
