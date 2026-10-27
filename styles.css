@@ -679,7 +679,8 @@ svg { flex-shrink: 0; }
 }
 
 .parts { display: flex; flex-direction: column; gap: 4px; }
-.part { display: flex; align-items: stretch; gap: 6px; min-width: 0; font-size: 13px; }
+.part { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; }
+.part:has(.who-stack) { align-items: stretch; }
 .sg {
   width: 18px; height: 18px; flex-shrink: 0;
   display: grid; place-items: center;
