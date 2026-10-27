@@ -1,0 +1,13 @@
+# IDE / инструменты разработки
+.claude/
+.mcp.json
+
+# Внутренние рабочие документы
+DESIGN_PROMPT.md
+
+# Зависимости (если появятся)
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

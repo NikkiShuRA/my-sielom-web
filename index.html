@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
+  <script>
+    // Тема применяется до отрисовки, чтобы не было вспышки светлого экрана
+    try { const t = JSON.parse(localStorage.getItem("sielom.theme")); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+  </script>
+  <title>СИЭУиП — Расписание</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Wix+Madefor+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="app__head">
+      <!-- Логотип -->
+      <header class="brand">
+        <button class="icon-btn" id="sidebarToggle" aria-label="Панель поиска" aria-controls="sidebar" title="Панель поиска">
+          <svg width="18" height="13" viewBox="0 0 20 14" fill="currentColor" aria-hidden="true"><rect width="20" height="2" rx="1"/><rect y="6" width="20" height="2" rx="1"/><rect y="12" width="20" height="2" rx="1"/></svg>
+        </button>
+        <div class="brand__logo">
+          <img src="assets/icons/logo.svg" width="40" height="40" alt="СИЭУиП логотип">
+          <div class="brand__text">
+            <span class="brand__name">СИЭУиП</span>
+            <span class="brand__sub">Расписание</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Заголовок расписания и навигация по периоду -->
+      <header class="topbar">
+        <div class="topbar__title">
+          <span class="topbar__kind" id="entityKind">Группа</span>
+          <span class="topbar__name" id="entityName">…</span>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn btn--outline today-btn" id="todayBtn" title="Вернуться к сегодня (T)">Сегодня</button>
+
+          <div class="pager">
+            <button class="pager__btn" id="prevWeek" aria-label="Назад" title="Назад (←)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="pager__label" aria-live="polite">
+              <span class="pager__main" id="periodLabel">—</span>
+              <span class="pager__sub" id="periodSub"></span>
+            </div>
+            <button class="pager__btn" id="nextWeek" aria-label="Вперёд" title="Вперёд (→)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+
+          <div class="segmented" id="viewSwitch" role="tablist" aria-label="Режим просмотра">
+            <span class="segmented__thumb" aria-hidden="true"></span>
+            <button class="segmented__btn" data-view="day" role="tab">День</button>
+            <button class="segmented__btn" data-view="week" role="tab">Неделя</button>
+          </div>
+        </div>
+      </header>
+    </div>
+
+    <div class="app__body">
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+    <!-- Боковая панель -->
+    <aside class="sidebar" id="sidebar">
+      <label class="search">
+        <svg class="search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.75" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <input id="search" type="search" placeholder="Поиск" autocomplete="off" aria-label="Поиск по списку">
+        <kbd class="search__kbd" aria-hidden="true">/</kbd>
+        <button class="search__clear" id="searchClear" hidden aria-label="Очистить поиск">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </label>
+
+      <div class="filters">
+        <div class="segmented segmented--tabs" id="kindTabs" role="tablist" aria-label="Что ищем">
+          <span class="segmented__thumb" aria-hidden="true"></span>
+          <button class="segmented__btn tabs__btn" data-tab="group" role="tab">Группы</button>
+          <button class="segmented__btn tabs__btn" data-tab="teacher" role="tab">Преподаватели</button>
+          <button class="segmented__btn tabs__btn" data-tab="room" role="tab">Кабинеты</button>
+        </div>
+        <button class="fav-filter" id="favFilter" aria-pressed="false" aria-label="Только избранное" title="Только избранное">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 2.75C4 2.34 4.34 2 4.75 2h6.5c.41 0 .75.34.75.75V14l-4-2.25L4 14V2.75z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <nav class="crumbs" aria-label="Навигация по списку">
+        <button class="icon-btn icon-btn--sm" id="crumbBack" aria-label="Назад" title="Назад">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="crumb" id="crumb"></div>
+      </nav>
+
+      <div class="list-wrap">
+        <ul class="list" id="list"></ul>
+      </div>
+
+      <div class="settings">
+        <button class="settings__row" disabled>
+          <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2a4 4 0 0 0-4 4v2.5L2.75 11h10.5L12 8.5V6a4 4 0 0 0-4-4zM6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <span class="settings__label">Уведомления</span>
+          <span class="settings__soon">Скоро</span>
+        </button>
+        <button class="settings__row" id="themeBtn" title="Сменить тему (D)">
+          <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
+          <span class="settings__label">Тема оформления</span>
+          <span class="settings__value" id="themeValue">Системная</span>
+        </button>
+        <button class="settings__row">
+          <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.25V11M8 5h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span class="settings__label">О приложении</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Расписание -->
+    <main class="week-wrap">
+      <div class="week" id="week"></div>
+    </main>
+    </div>
+  </div>
+
+  <!-- Детали пары -->
+  <dialog class="modal" id="lessonModal" aria-labelledby="mTitle">
+    <form method="dialog" class="modal__inner">
+      <span class="modal__grip" aria-hidden="true"></span>
+      <div class="modal__top">
+        <div class="modal__head" id="mHead" tabindex="-1" autofocus></div>
+        <button class="modal__x" aria-label="Закрыть">
+          <svg width="12" height="12" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal__body" id="mBody"></div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
