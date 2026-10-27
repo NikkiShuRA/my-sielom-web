@@ -1,7 +1,8 @@
 export default async function handler(req, res) {
   const url = new URL(req.url, "http://localhost");
-  const apiPath = url.pathname.replace(/^\/api\/strapi/, "");
-  const upstream = `https://strapi.sielom.ru/api${apiPath}${url.search}`;
+  url.searchParams.delete("...path");
+  const apiPath = url.pathname.replace(/^\/strapi/, "");
+  const upstream = `https://strapi.sielom.ru${apiPath}${url.search}`;
   try {
     const r = await fetch(upstream, {
       headers: { accept: "application/json" },

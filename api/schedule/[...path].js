@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   const url = new URL(req.url, "http://localhost");
-  const apiPath = url.pathname.replace(/^\/api\/schedule/, "");
-  const upstream = `https://sielom.ru/schedule/api${apiPath}${url.search}`;
+  url.searchParams.delete("...path");
+  const upstream = `https://sielom.ru${url.pathname}${url.search}`;
   try {
     const r = await fetch(upstream, {
       headers: { accept: "application/json" },
