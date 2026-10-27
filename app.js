@@ -359,8 +359,8 @@
       .filter(Boolean).join(" ");
     const meta = [
       full ? "" : `<span class="lesson__num">${l0.lessonNumber}</span><span class="lesson__time">${esc(l0.timeStart)} – ${esc(l0.timeEnd)}</span>`,
-      chip || notes.length ? '<span class="grow"></span>' : "",
       chip,
+      notes.length ? '<span class="grow"></span>' : (chip ? '<span class="grow"></span>' : ""),
       notes.length ? `<span class="lesson__note" title="Есть примечание">${ICON.alert}</span>` : "",
     ].join("");
 
