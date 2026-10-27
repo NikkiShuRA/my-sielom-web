@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Расписание СИЭУиП — презентация</title>
+  <meta name="description" content="Неофициальный клиент расписания Сургутского института экономики, управления и права: живая текущая пара, тёмная тема, расписание групп, преподавателей и кабинетов.">
+  <meta property="og:title" content="Расписание СИЭУиП — так, как должно быть">
+  <meta property="og:description" content="Неофициальный клиент расписания СИЭУиП: живая текущая пара, тёмная тема, горячие клавиши, мобильная версия.">
+  <meta property="og:image" content="screenshots/day-light.webp">
+  <meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="logo.svg">
+  <script>
+    try { const t = localStorage.getItem("deck.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Wix+Madefor+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Токены — те же, что в самом приложении ===== */
+    :root {
+      --c-canvas: #f3f3f0;
+      --c-bg: #ffffff;
+      --c-surface: #f6f6f3;
+      --c-surface-2: #efefeb;
+      --c-line: #e8e8e4;
+      --c-line-strong: #d6d6d0;
+      --c-text: #33332f;
+      --c-text-2: #5f5f59;
+      --c-muted: #74746d;
+      --c-faint: #b4b4ac;
+      --c-accent: #ffe16c;
+      --c-accent-strong: #f2c200;
+      --c-accent-tint: #fff8d6;
+      --c-accent-ink: #6b5300;
+      --c-on-accent: #33332f;
+      --c-bad: #b3412b;
+      --c-bad-tint: #fbe9e4;
+      --c-good: #2f7a3c;
+      --sh-sm: 0 0 0 1px rgba(40,40,20,.05), 0 2px 4px rgba(40,40,20,.04), 0 6px 16px rgba(40,40,20,.05);
+      --sh-lg: 0 0 0 1px rgba(40,40,20,.05), 0 24px 60px rgba(40,40,20,.16), 0 4px 12px rgba(40,40,20,.06);
+      --r-xl: 22px;
+      --r-lg: 16px;
+      --r-md: 12px;
+      --ease: cubic-bezier(.2,.8,.2,1);
+      --font: "Wix Madefor Display", system-ui, sans-serif;
+      --font-ui: "Inter", system-ui, sans-serif;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --c-canvas: #111110; --c-bg: #1b1b19; --c-surface: #242421; --c-surface-2: #2d2d2a;
+        --c-line: #2f2f2c; --c-line-strong: #43433e; --c-text: #edede7; --c-text-2: #bdbdb5;
+        --c-muted: #92928a; --c-faint: #5e5e58; --c-accent-tint: #2a2614; --c-accent-ink: #ffd84d;
+        --c-bad: #ff8a70; --c-bad-tint: #3a1d16; --c-good: #7fd28d;
+        --sh-sm: 0 0 0 1px rgba(255,255,255,.05), 0 2px 8px rgba(0,0,0,.3);
+        --sh-lg: 0 0 0 1px rgba(255,255,255,.06), 0 24px 60px rgba(0,0,0,.55);
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --c-canvas: #111110; --c-bg: #1b1b19; --c-surface: #242421; --c-surface-2: #2d2d2a;
+      --c-line: #2f2f2c; --c-line-strong: #43433e; --c-text: #edede7; --c-text-2: #bdbdb5;
+      --c-muted: #92928a; --c-faint: #5e5e58; --c-accent-tint: #2a2614; --c-accent-ink: #ffd84d;
+      --c-bad: #ff8a70; --c-bad-tint: #3a1d16; --c-good: #7fd28d;
+      --sh-sm: 0 0 0 1px rgba(255,255,255,.05), 0 2px 8px rgba(0,0,0,.3);
+      --sh-lg: 0 0 0 1px rgba(255,255,255,.06), 0 24px 60px rgba(0,0,0,.55);
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+    @media (max-width: 900px), (max-height: 640px) { html { scroll-snap-type: none; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body {
+      margin: 0; background: var(--c-canvas); color: var(--c-text);
+      font: 16px/1.5 var(--font-ui); -webkit-font-smoothing: antialiased;
+      transition: background-color .3s var(--ease), color .3s var(--ease);
+    }
+    img { display: block; max-width: 100%; height: auto; }
+    a { color: inherit; }
+    h1, h2, h3 { font-family: var(--font); margin: 0; letter-spacing: -.02em; line-height: 1.08; }
+    p { margin: 0; }
+    kbd {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 1.9em; height: 1.9em; padding: 0 .5em;
+      border-radius: 8px; background: var(--c-bg); box-shadow: inset 0 -2px 0 var(--c-line-strong), 0 0 0 1px var(--c-line-strong);
+      font: 600 .82em/1 var(--font-ui); color: var(--c-text);
+    }
+
+    /* ===== Хром презентации ===== */
+    .progress { position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 50; background: transparent; }
+    .progress__bar { height: 100%; width: 0; background: var(--c-accent-strong); transition: width .3s var(--ease); }
+    .topnav {
+      position: fixed; z-index: 40; top: 16px; left: 16px; right: 16px; display: flex; align-items: center; justify-content: space-between;
+      pointer-events: none;
+    }
+    .topnav > * { pointer-events: auto; }
+    .brand {
+      display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px;
+      background: color-mix(in srgb, var(--c-bg) 82%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      box-shadow: var(--sh-sm); text-decoration: none; font: 700 15px/1 var(--font);
+    }
+    .brand img { width: 30px; height: 30px; }
+    .topnav__right { display: flex; gap: 8px; }
+    .pill-btn {
+      height: 42px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      background: color-mix(in srgb, var(--c-bg) 82%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      box-shadow: var(--sh-sm); color: var(--c-text); font: 600 14px/1 var(--font-ui); text-decoration: none;
+    }
+    .pill-btn:hover { background: var(--c-bg); }
+    .pill-btn--accent { background: var(--c-accent); color: var(--c-on-accent); }
+    .pill-btn--accent:hover { background: var(--c-accent-strong); }
+    .counter { font: 600 13px/1 var(--font-ui); color: var(--c-muted); font-variant-numeric: tabular-nums; }
+
+    .dots { position: fixed; z-index: 40; right: 22px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
+    .dots button {
+      width: 10px; height: 10px; padding: 0; border: 0; border-radius: 999px; background: var(--c-line-strong); cursor: pointer;
+      transition: height .3s var(--ease), background .3s var(--ease);
+    }
+    .dots button[aria-current="true"] { height: 28px; background: var(--c-accent-strong); }
+    .dots button:focus-visible, .pill-btn:focus-visible, .tab:focus-visible { outline: 2px solid var(--c-accent-strong); outline-offset: 3px; }
+    .hint { position: fixed; z-index: 40; left: 50%; bottom: 18px; transform: translateX(-50%); padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--c-bg) 85%, transparent); backdrop-filter: blur(10px); box-shadow: var(--sh-sm); font-size: 13px; color: var(--c-muted); display: flex; gap: 8px; align-items: center; transition: opacity .4s; }
+    .hint.is-hidden { opacity: 0; pointer-events: none; }
+    @media (max-width: 900px) { .dots, .hint, .counter { display: none; } }
+
+    /* ===== Слайды ===== */
+    .slide {
+      min-height: 100vh; min-height: 100svh; scroll-snap-align: start; position: relative;
+      display: flex; align-items: center; padding: 96px clamp(16px, 6vw, 96px) 72px;
+    }
+    .slide__inner { width: 100%; max-width: 1280px; margin: 0 auto; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px; padding: 6px 12px; border-radius: 999px;
+      background: var(--c-accent-tint); color: var(--c-accent-ink); font: 600 13px/1 var(--font-ui); letter-spacing: .02em;
+    }
+    .h-xl { font-size: clamp(40px, 7vw, 92px); font-weight: 800; }
+    .h-lg { font-size: clamp(32px, 4.6vw, 60px); font-weight: 800; }
+    .lead { font-size: clamp(17px, 1.6vw, 21px); color: var(--c-text-2); max-width: 46ch; margin-top: 20px; text-wrap: pretty; }
+    .mark { background: linear-gradient(transparent 58%, var(--c-accent) 58%, var(--c-accent) 92%, transparent 92%); padding: 0 .08em; }
+    .split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
+    .split--rev { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+    @media (max-width: 900px) { .split, .split--rev { grid-template-columns: 1fr; } .split--rev > :first-child { order: 2; } }
+
+    .shot { border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--sh-lg); background: var(--c-bg); }
+    .shot img { width: 100%; }
+    .phone {
+      width: min(300px, 70vw); aspect-ratio: 390 / 844; border-radius: 44px; padding: 10px; background: #1a1a18;
+      box-shadow: var(--sh-lg), inset 0 0 0 2px #3a3a36; flex: none; position: relative;
+    }
+    .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 34px; }
+    .caption { margin-top: 12px; font-size: 13px; color: var(--c-muted); text-align: center; }
+
+    .bullets { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 14px; }
+    .bullets li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; color: var(--c-text-2); }
+    .bullets b { color: var(--c-text); font-weight: 600; }
+    .bullets .ico { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: var(--c-accent); color: var(--c-on-accent); font: 700 14px/1 var(--font); }
+    .bullets--bad .ico { background: var(--c-bad-tint); color: var(--c-bad); }
+
+    /* reveal */
+    .rv { opacity: 0; transform: translateY(24px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+    .is-in .rv { opacity: 1; transform: none; }
+    .is-in .rv:nth-child(2) { transition-delay: .08s; } .is-in .rv:nth-child(3) { transition-delay: .16s; } .is-in .rv:nth-child(4) { transition-delay: .24s; }
+    @media (prefers-reduced-motion: reduce) { .rv { opacity: 1; transform: none; transition: none; } }
+
+    /* ===== 1. Обложка ===== */
+    .hero { text-align: center; overflow: clip; padding-top: 84px; padding-bottom: 32px; }
+    .hero .h-xl { font-size: clamp(40px, 6.2vw, 84px); }
+    .hero .lead { margin-inline: auto; }
+    .hero__cta { display: flex; gap: 10px; justify-content: center; margin-top: 32px; flex-wrap: wrap; }
+    .hero__cta .pill-btn { height: 52px; padding: 0 24px; font-size: 16px; }
+    .hero__stage { position: relative; margin: 44px auto 0; max-width: 1000px; }
+    .hero__stage .shot { height: min(32vh, 320px); transform: perspective(1800px) rotateX(8deg); transform-origin: 50% 0; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+    .hero__stage .shot img { height: 100%; object-fit: cover; object-position: top; }
+    .hero__stage .phone { position: absolute; right: -1%; top: -28px; width: min(170px, 22vw); border-radius: 30px; padding: 6px; }
+    .hero__stage .phone img { border-radius: 25px; }
+    .hero__chip {
+      position: absolute; left: -2%; top: 30%; padding: 12px 16px; border-radius: 16px; background: var(--c-bg); box-shadow: var(--sh-lg);
+      font: 600 14px/1.3 var(--font-ui); text-align: left; animation: bob 5s ease-in-out infinite;
+    }
+    .hero__chip span { display: block; font-weight: 500; color: var(--c-muted); font-size: 12px; }
+    .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: var(--c-accent-strong); margin-right: 6px; box-shadow: 0 0 0 0 var(--c-accent-strong); animation: pulse 1.8s infinite; vertical-align: 1px; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(242,194,0,.6); } 100% { box-shadow: 0 0 0 10px rgba(242,194,0,0); } }
+    @keyframes bob { 50% { transform: translateY(-8px); } }
+    @media (max-width: 700px) { .hero__chip { display: none; } .hero__stage .phone { right: -4%; } }
+
+    /* ===== 2. Проблема ===== */
+    .before { display: flex; gap: 24px; align-items: flex-end; justify-content: center; }
+    .before .shot { flex: 1; min-width: 0; filter: saturate(.85); }
+    .before .phone { width: min(220px, 34vw); }
+    @media (max-width: 700px) { .before .shot { display: none; } }
+
+    /* ===== 3. Живая пара: интерактивное демо ===== */
+    .demo { background: var(--c-bg); border-radius: var(--r-xl); box-shadow: var(--sh-lg); padding: clamp(18px, 3vw, 32px); }
+    .demo__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+    .demo__day { font: 800 28px/1 var(--font); }
+    .demo__sub { color: var(--c-muted); font-size: 14px; margin-top: 4px; }
+    .demo__clock { font: 700 32px/1 var(--font); font-variant-numeric: tabular-nums; }
+    .tl { display: grid; gap: 10px; }
+    .tl-row { display: grid; grid-template-columns: 54px 18px 1fr; gap: 12px; align-items: start; }
+    .tl-time { text-align: right; font: 700 15px/1.2 var(--font); padding-top: 14px; }
+    .tl-time small { display: block; font: 500 13px/1.3 var(--font-ui); color: var(--c-muted); }
+    .tl-dot { width: 14px; height: 14px; margin-top: 17px; border-radius: 99px; border: 2px solid var(--c-line-strong); background: var(--c-bg); transition: all .3s var(--ease); }
+    .card {
+      position: relative; overflow: hidden; border-radius: var(--r-lg); padding: 14px 16px; background: var(--c-surface);
+      border: 2px solid transparent; transition: all .35s var(--ease);
+    }
+    .card__chip { display: none; margin-bottom: 8px; padding: 4px 10px; border-radius: 99px; font: 600 12.5px/1.2 var(--font-ui); width: fit-content; }
+    .card__title { font: 700 17px/1.25 var(--font); }
+    .card__meta { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 14px; color: var(--c-text-2); }
+    .room { padding: 2px 8px; border-radius: 8px; background: var(--c-bg); box-shadow: 0 0 0 1px var(--c-line-strong); font: 700 13px/1.4 var(--font); color: var(--c-text); }
+    .card__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--c-line); display: none; }
+    .card__bar i { display: block; height: 100%; background: var(--c-accent-strong); width: 0; transition: width .3s var(--ease); }
+    .tl-row.is-now .card { background: var(--c-bg); border-color: var(--c-accent-strong); }
+    .tl-row.is-now .card__chip { display: block; background: var(--c-accent); color: var(--c-on-accent); }
+    .tl-row.is-now .card__bar { display: block; }
+    .tl-row.is-now .tl-dot { border-color: var(--c-accent-strong); background: var(--c-accent-strong); box-shadow: 0 0 0 5px var(--c-accent-tint); }
+    .tl-row.is-next .card__chip { display: block; background: var(--c-accent-tint); color: var(--c-accent-ink); }
+    .tl-row.is-past .card { opacity: .5; padding-block: 8px; }
+    .tl-row.is-past .card__title { text-decoration: line-through; font-size: 15px; }
+    .tl-row.is-past .card__meta { display: none; }
+    .tl-row.is-past .tl-time { opacity: .5; padding-top: 8px; }
+    .tl-row.is-past .tl-dot { margin-top: 11px; }
+    .break { margin-left: 84px; font-size: 12.5px; color: var(--c-muted); display: flex; align-items: center; gap: 8px; }
+    .break::after { content: ""; flex: 1; height: 1px; background: var(--c-line); }
+    .scrub { margin-top: 22px; }
+    .scrub label { display: flex; justify-content: space-between; font-size: 13px; color: var(--c-muted); margin-bottom: 8px; }
+    input[type=range] { width: 100%; accent-color: var(--c-accent-strong); height: 28px; cursor: pointer; }
+
+    /* ===== Сравнение светлая/тёмная ===== */
+    .compare { position: relative; border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--sh-lg); user-select: none; touch-action: pan-y; --pos: 50%; }
+    .compare img { width: 100%; pointer-events: none; }
+    .compare__top { position: absolute; inset: 0; clip-path: inset(0 0 0 var(--pos)); }
+    .compare__line { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 3px; margin-left: -1.5px; background: var(--c-accent); box-shadow: 0 0 12px rgba(0,0,0,.3); }
+    .compare__knob {
+      position: absolute; top: 50%; left: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 99px; background: var(--c-accent);
+      color: #33332f; display: grid; place-items: center; font: 800 16px/1 var(--font); box-shadow: 0 4px 14px rgba(0,0,0,.3); cursor: ew-resize;
+    }
+    .compare__tag { position: absolute; top: 14px; padding: 5px 10px; border-radius: 99px; font: 600 12px/1 var(--font-ui); background: rgba(0,0,0,.55); color: #fff; }
+    .compare input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+
+    /* ===== Табы трёх расписаний ===== */
+    .tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--c-surface-2); margin-top: 28px; }
+    .tab { border: 0; background: transparent; padding: 10px 18px; border-radius: 999px; cursor: pointer; font: 600 15px/1 var(--font-ui); color: var(--c-text-2); transition: all .25s var(--ease); }
+    .tab[aria-selected="true"] { background: var(--c-accent); color: var(--c-on-accent); }
+    .tab-copy { margin-top: 22px; min-height: 7.5em; color: var(--c-text-2); }
+    .tab-copy b { color: var(--c-text); display: block; font: 700 20px/1.3 var(--font); margin-bottom: 6px; }
+    .tab-stage { position: relative; }
+    .tab-stage .shot { transition: opacity .35s var(--ease); }
+    .tab-stage .shot + .shot { position: absolute; inset: 0; }
+    .tab-stage .shot[hidden] { display: block; opacity: 0; pointer-events: none; }
+
+    /* ===== Мобильные ===== */
+    .phones { display: flex; gap: clamp(14px, 3vw, 36px); justify-content: center; align-items: flex-start; }
+    .phones .phone { width: min(250px, 42vw); }
+    .phones .phone:nth-child(2) { margin-top: 48px; }
+    @media (max-width: 700px) { .phones .phone:nth-child(3) { display: none; } }
+
+    /* ===== Было/стало ===== */
+    .vs { display: grid; grid-template-columns: auto 1fr auto; gap: clamp(16px, 3vw, 40px); align-items: center; }
+    .vs__label { text-align: center; font: 700 15px/1.2 var(--font); margin-bottom: 12px; }
+    .vs__label span { display: block; font: 500 12.5px/1.3 var(--font-ui); color: var(--c-muted); margin-top: 4px; }
+    .table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--c-bg); border-radius: var(--r-xl); box-shadow: var(--sh-sm); overflow: hidden; font-size: 14.5px; }
+    .table th, .table td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--c-line); vertical-align: top; }
+    .table tr:last-child td { border-bottom: 0; }
+    .table th { font: 600 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; color: var(--c-muted); background: var(--c-surface); }
+    .table td:first-child { font-weight: 600; }
+    .y { color: var(--c-good); font-weight: 600; } .n { color: var(--c-bad); font-weight: 600; } .eq { color: var(--c-muted); }
+    @media (max-width: 1100px) { .vs { grid-template-columns: 1fr; } .vs > .vs__phone { display: none; } }
+
+    /* ===== Мелочи (сетка фич) ===== */
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 36px; }
+    @media (max-width: 1000px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    .tile { background: var(--c-bg); border-radius: var(--r-lg); padding: 20px; box-shadow: var(--sh-sm); }
+    .tile__ico { width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent-tint); color: var(--c-accent-ink); display: grid; place-items: center; margin-bottom: 14px; }
+    .tile h3 { font-size: 18px; margin-bottom: 6px; letter-spacing: -.01em; }
+    .tile p { font-size: 14.5px; color: var(--c-text-2); }
+
+    /* ===== Горячие клавиши ===== */
+    .keys { display: grid; gap: 10px; margin-top: 32px; }
+    .key-row { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 16px; padding: 12px 16px; border-radius: var(--r-md); background: var(--c-bg); box-shadow: var(--sh-sm); transition: all .2s var(--ease); }
+    .key-row kbd { font-size: 15px; }
+    .key-row.is-hit { background: var(--c-accent); color: var(--c-on-accent); transform: scale(1.02); }
+    .key-row.is-hit kbd { background: #fff; color: #33332f; }
+    .keys-note { margin-top: 16px; font-size: 13.5px; color: var(--c-muted); }
+
+    /* ===== Архитектура ===== */
+    .arch { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 12px; align-items: center; margin-top: 40px; }
+    .node { background: var(--c-bg); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--sh-sm); }
+    .node h3 { font-size: 17px; margin-bottom: 8px; }
+    .node code { display: block; font: 500 12.5px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--c-text-2); }
+    .node--accent { background: var(--c-accent); color: var(--c-on-accent); }
+    .node--accent code { color: #4a4a40; }
+    .arrow { color: var(--c-muted); font: 700 22px/1 var(--font); text-align: center; }
+    @media (max-width: 900px) { .arch { grid-template-columns: 1fr; } .arrow { transform: rotate(90deg); } }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+    @media (max-width: 700px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .stat { padding: 18px; border-radius: var(--r-lg); background: var(--c-surface-2); }
+    .stat b { display: block; font: 800 clamp(28px, 3.4vw, 42px)/1 var(--font); }
+    .stat span { font-size: 13.5px; color: var(--c-text-2); }
+
+    /* ===== Финал ===== */
+    .final { text-align: center; }
+    .final .lead { margin-inline: auto; }
+    .qr { width: 196px; height: 196px; margin: 36px auto 0; padding: 14px; border-radius: 22px; background: #fff; box-shadow: var(--sh-lg); }
+    .qr svg { width: 100%; height: 100%; display: block; }
+    .roadmap { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+    .roadmap span { padding: 8px 14px; border-radius: 999px; background: var(--c-bg); box-shadow: var(--sh-sm); font-size: 14px; color: var(--c-text-2); }
+    .foot { margin-top: 40px; font-size: 13px; color: var(--c-muted); }
+  </style>
+</head>
+<body>
+  <div class="progress" aria-hidden="true"><div class="progress__bar" id="bar"></div></div>
+
+  <nav class="topnav">
+    <a class="brand" href="#s-hero"><img src="logo.svg" alt="" width="30" height="30">СИЭУиП · Расписание</a>
+    <div class="topnav__right">
+      <span class="pill-btn counter" id="counter" aria-live="polite">01 / 10</span>
+      <button class="pill-btn" id="themeBtn" title="Сменить тему (D)" aria-label="Сменить тему">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
+      </button>
+      <a class="pill-btn pill-btn--accent" href="https://my-sielom-web.vercel.app/" target="_blank" rel="noopener">Открыть</a>
+    </div>
+  </nav>
+
+  <nav class="dots" id="dots" aria-label="Слайды"></nav>
+  <div class="hint" id="hint"><kbd>↓</kbd> <kbd>Space</kbd> листать · <kbd>D</kbd> тема</div>
+
+  <main id="deck">
+
+    <!-- 1. Обложка -->
+    <section class="slide hero" id="s-hero" data-title="Обложка">
+      <div class="slide__inner">
+        <span class="eyebrow rv">Сургутский институт экономики, управления и права</span>
+        <h1 class="h-xl rv">Расписание,<br>которое <span class="mark">понимает время</span></h1>
+        <p class="lead rv">Неофициальный клиент расписания СИЭУиП. Те же данные, что на sielom.ru, — но с живой текущей парой, тёмной темой и нормальной мобильной версией.</p>
+        <div class="hero__cta rv">
+          <a class="pill-btn pill-btn--accent" href="https://my-sielom-web.vercel.app/" target="_blank" rel="noopener">Открыть расписание →</a>
+          <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <div class="hero__stage rv">
+          <div class="shot"><img src="screenshots/week-light.webp" alt="Расписание группы на неделю, светлая тема" width="1600" height="1000"></div>
+          <div class="phone"><img src="screenshots/mobile-day-dark.webp" alt="Режим «День» на телефоне, тёмная тема" width="780" height="1688"></div>
+          <div class="hero__chip"><span class="live-dot"></span>Идёт · ещё 38 мин<span>4 пара · ауд. 115</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Проблема -->
+    <section class="slide" id="s-problem" data-title="Отправная точка">
+      <div class="slide__inner split">
+        <div>
+          <span class="eyebrow rv">Отправная точка</span>
+          <h2 class="h-lg rv">Официальное расписание показывает данные. И только.</h2>
+          <ul class="bullets bullets--bad rv">
+            <li><span class="ico">✕</span><span><b>Не знает, который час.</b> Чтобы понять, какая пара идёт и сколько до конца, — смотри на часы и считай сам.</span></li>
+            <li><span class="ico">✕</span><span><b>Пустота на телефоне.</b> Три карточки «Нет пары» занимают весь экран, а первая настоящая пара — где-то внизу.</span></li>
+            <li><span class="ico">✕</span><span><b>Только светлая тема.</b> Вечером в 18:00 по пути с пар — прямо в глаза.</span></li>
+            <li><span class="ico">✕</span><span><b>Нет поиска по тексту и подробностей.</b> Группа выбирается через корпус и курс, клик по паре ничего не открывает.</span></li>
+          </ul>
+        </div>
+        <div class="before rv">
+          <div class="shot"><img src="screenshots/off-desktop-week.webp" alt="Официальное расписание на sielom.ru, неделя" width="1600" height="1000" loading="lazy"></div>
+          <div>
+            <div class="phone"><img src="screenshots/off-mobile.webp" alt="Официальное расписание на телефоне" width="780" height="1688" loading="lazy"></div>
+            <p class="caption">sielom.ru/timetable · та же группа, тот же день</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Живая пара -->
+    <section class="slide" id="s-live" data-title="Живая пара">
+      <div class="slide__inner split">
+        <div>
+          <span class="eyebrow rv">Главная фича</span>
+          <h2 class="h-lg rv">Сразу видно, <span class="mark">что сейчас</span></h2>
+          <p class="lead rv">Расписание пересчитывается каждую минуту. Текущая пара подсвечена, внизу полоса прогресса, следующая помечена «через N мин», прошедшие схлопываются в строку.</p>
+          <ul class="bullets rv">
+            <li><span class="ico">1</span><span><b>Таймер</b> «Идёт · ещё 38 мин» прямо на карточке</span></li>
+            <li><span class="ico">2</span><span><b>Пересменка и перемены</b> между парами видны на таймлайне</span></li>
+            <li><span class="ico">3</span><span><b>Попробуйте сами</b> — двигайте ползунок времени справа</span></li>
+          </ul>
+        </div>
+        <div class="demo rv" id="demo">
+          <div class="demo__head">
+            <div><div class="demo__day">Вторник</div><div class="demo__sub">ИС-23/9-2 · 27 октября</div></div>
+            <div class="demo__clock" id="demoClock">14:22</div>
+          </div>
+          <div class="tl" id="tl"></div>
+          <div class="scrub">
+            <label for="scrub"><span>Время</span><span>13:00 — 18:30</span></label>
+            <input type="range" id="scrub" min="780" max="1110" step="1" value="862" aria-label="Время суток в демо">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Неделя + темы -->
+    <section class="slide" id="s-week" data-title="Неделя и темы">
+      <div class="slide__inner split split--rev">
+        <div class="rv">
+          <div class="compare" id="compare">
+            <img src="screenshots/week-light.webp" alt="Неделя, светлая тема" width="1600" height="1000" loading="lazy">
+            <div class="compare__top"><img src="screenshots/week-dark.webp" alt="Неделя, тёмная тема" width="1600" height="1000" loading="lazy"></div>
+            <span class="compare__tag" style="left:14px">Светлая</span>
+            <span class="compare__tag" style="right:14px">Тёмная</span>
+            <div class="compare__line"><div class="compare__knob">⇆</div></div>
+            <input type="range" min="0" max="100" value="50" aria-label="Сравнить светлую и тёмную тему">
+          </div>
+        </div>
+        <div>
+          <span class="eyebrow rv">Два режима · три темы</span>
+          <h2 class="h-lg rv">Вся неделя одним взглядом</h2>
+          <p class="lead rv">«Неделя» — шесть колонок, сегодняшний день выделен жёлтым, прошедшие пары приглушены. «День» — таймлайн с подробностями. Режим запоминается.</p>
+          <ul class="bullets rv">
+            <li><span class="ico">◐</span><span><b>Системная, светлая или тёмная</b> тема — применяется до отрисовки, без белой вспышки</span></li>
+            <li><span class="ico">⇆</span><span><b>Перетаскивание мышью</b> по сетке недели и свайпы по дням на телефоне</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Три расписания -->
+    <section class="slide" id="s-kinds" data-title="Группы, преподаватели, кабинеты">
+      <div class="slide__inner split">
+        <div>
+          <span class="eyebrow rv">Три расписания в одном месте</span>
+          <h2 class="h-lg rv">Группы. Преподаватели. Кабинеты.</h2>
+          <div class="tabs rv" role="tablist" id="kindTabs">
+            <button class="tab" role="tab" aria-selected="true" data-i="0">Группы</button>
+            <button class="tab" role="tab" aria-selected="false" data-i="1">Преподаватели</button>
+            <button class="tab" role="tab" aria-selected="false" data-i="2">Кабинеты</button>
+          </div>
+          <div class="tab-copy rv" id="kindCopy"></div>
+        </div>
+        <div class="tab-stage rv" id="kindStage">
+          <div class="shot"><img src="screenshots/search-light.webp" alt="Поиск групп" width="1600" height="1000" loading="lazy"></div>
+          <div class="shot" hidden><img src="screenshots/teacher-light.webp" alt="Расписание преподавателя" width="1600" height="1000" loading="lazy"></div>
+          <div class="shot" hidden><img src="screenshots/room-dark.webp" alt="Расписание кабинета" width="1600" height="1000" loading="lazy"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Карточка пары -->
+    <section class="slide" id="s-detail" data-title="Подробности пары">
+      <div class="slide__inner split split--rev">
+        <div class="rv"><div class="shot"><img src="screenshots/modal-light.webp" alt="Окно с подробностями пары" width="1600" height="1000" loading="lazy"></div></div>
+        <div>
+          <span class="eyebrow rv">Один тап — всё о паре</span>
+          <h2 class="h-lg rv">Где, кто, с кем</h2>
+          <ul class="bullets rv">
+            <li><span class="ico">📍</span><span><b>Аудитория, номер корпуса и адрес</b> — не нужно вспоминать, где «Пролетарский, 3»</span></li>
+            <li><span class="ico">👤</span><span><b>Полное ФИО преподавателя</b> с аватаром из базы сотрудников</span></li>
+            <li><span class="ico">↗</span><span><b>Переходы по ссылкам:</b> клик по преподавателю открывает его расписание, по группе — расписание группы</span></li>
+            <li><span class="ico">½</span><span><b>Подгруппы</b> — когда группа делится, обе половины видны с кабинетами и преподавателями</span></li>
+            <li><span class="ico">!</span><span><b>Примечания</b> о переносах и заменах — со значком предупреждения</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Мобильная версия -->
+    <section class="slide" id="s-mobile" data-title="Мобильная версия">
+      <div class="slide__inner split">
+        <div>
+          <span class="eyebrow rv">Сделано для телефона</span>
+          <h2 class="h-lg rv">Расписание — в кармане, а не в зуме</h2>
+          <p class="lead rv">На телефоне открывается режим «День»: полоса дней недели сверху, свайп влево-вправо листает дни, подробности выезжают нижней шторкой. Все кнопки — от 44 px под палец.</p>
+        </div>
+        <div class="phones rv">
+          <div class="phone"><img src="screenshots/mobile-day-light.webp" alt="День на телефоне, светлая тема" width="780" height="1688" loading="lazy"></div>
+          <div class="phone"><img src="screenshots/mobile-modal-dark.webp" alt="Шторка с подробностями пары, тёмная тема" width="780" height="1688" loading="lazy"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Сравнение -->
+    <section class="slide" id="s-vs" data-title="Сравнение">
+      <div class="slide__inner">
+        <span class="eyebrow rv">Честное сравнение</span>
+        <h2 class="h-lg rv" style="margin-bottom:28px">Было → стало</h2>
+        <div class="vs rv">
+          <div class="vs__phone"><p class="vs__label">sielom.ru<span>официальное</span></p><div class="phone" style="width:210px"><img src="screenshots/off-mobile.webp" alt="Официальное расписание на телефоне" width="780" height="1688" loading="lazy"></div></div>
+          <table class="table">
+            <thead><tr><th></th><th>sielom.ru/timetable</th><th>Этот проект</th></tr></thead>
+            <tbody>
+              <tr><td>Текущая пара</td><td class="n">Нет</td><td class="y">Подсветка, таймер, прогресс</td></tr>
+              <tr><td>Тёмная тема</td><td class="n">Нет</td><td class="y">Системная / светлая / тёмная</td></tr>
+              <tr><td>Подробности пары</td><td class="n">Клик ничего не делает</td><td class="y">Корпус, адрес, ФИО, группы</td></tr>
+              <tr><td>Поиск</td><td class="n">Выбор через корпус и курс</td><td class="y">Мгновенный поиск по тексту</td></tr>
+              <tr><td>Горячие клавиши</td><td class="n">Нет</td><td class="y">← → T / D Esc</td></tr>
+              <tr><td>Пустые пары на телефоне</td><td class="n">Карточки на весь экран</td><td class="y">Только реальные пары</td></tr>
+              <tr><td>День / неделя</td><td class="eq">Есть</td><td class="eq">Есть</td></tr>
+              <tr><td>Избранное</td><td class="eq">Есть</td><td class="eq">Есть, + кабинеты</td></tr>
+              <tr><td>Экспорт в PDF</td><td class="y">Есть</td><td class="n">Пока нет</td></tr>
+            </tbody>
+          </table>
+          <div class="vs__phone"><p class="vs__label">my-sielom-web<span>этот проект</span></p><div class="phone" style="width:210px"><img src="screenshots/mobile-day-light.webp" alt="Этот проект на телефоне" width="780" height="1688" loading="lazy"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Мелочи + горячие клавиши -->
+    <section class="slide" id="s-keys" data-title="Горячие клавиши">
+      <div class="slide__inner split">
+        <div>
+          <span class="eyebrow rv">Для тех, кто с клавиатурой</span>
+          <h2 class="h-lg rv">Всё управляется без мыши</h2>
+          <div class="keys rv" id="keys">
+            <div class="key-row" data-code="ArrowLeft ArrowRight"><span><kbd>←</kbd> <kbd>→</kbd></span><span>Предыдущий / следующий день или неделя</span></div>
+            <div class="key-row" data-code="KeyT"><span><kbd>T</kbd></span><span>Вернуться к сегодня</span></div>
+            <div class="key-row" data-code="Slash"><span><kbd>/</kbd></span><span>Фокус в поиск</span></div>
+            <div class="key-row" data-code="KeyD"><span><kbd>D</kbd></span><span>Сменить тему</span></div>
+            <div class="key-row" data-code="Escape"><span><kbd>Esc</kbd></span><span>Закрыть окно / очистить поиск</span></div>
+          </div>
+          <p class="keys-note rv">Нажмите любую из клавиш — подсветится. <kbd>D</kbd> работает и в этой презентации.</p>
+        </div>
+        <div class="grid rv" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0">
+          <div class="tile"><div class="tile__ico">★</div><h3>Избранное</h3><p>Группы, преподаватели и кабинеты — в один клик, фильтр «только избранное».</p></div>
+          <div class="tile"><div class="tile__ico">⌂</div><h3>Запоминает выбор</h3><p>Открываешь сайт — сразу твоя группа и твой режим просмотра.</p></div>
+          <div class="tile"><div class="tile__ico">↻</div><h3>Всегда актуально</h3><p>Данные берутся напрямую из API sielom.ru, без копий и задержек.</p></div>
+          <div class="tile"><div class="tile__ico">⚡</div><h3>Быстро</h3><p>Запросы кэшируются, список сотрудников хранится локально сутки.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Под капотом -->
+    <section class="slide" id="s-tech" data-title="Под капотом">
+      <div class="slide__inner">
+        <span class="eyebrow rv">Под капотом</span>
+        <h2 class="h-lg rv">Без фреймворков. Без сборки.</h2>
+        <p class="lead rv" style="max-width:60ch">Чистые HTML, CSS и JavaScript. Единственный серверный код — прокси на Vercel, который обходит CORS к официальному API.</p>
+        <div class="arch rv">
+          <div class="node"><h3>Браузер</h3><code>index.html</code><code>styles.css</code><code>app.js</code></div>
+          <div class="arrow">→</div>
+          <div class="node node--accent"><h3>Vercel</h3><code>/schedule/* → api/proxy.js</code><code>/strapi/* → api/proxy.js</code></div>
+          <div class="arrow">→</div>
+          <div class="node"><h3>sielom.ru</h3><code>sielom.ru/schedule/api</code><code>strapi.sielom.ru/api</code></div>
+        </div>
+        <div class="stats rv">
+          <div class="stat"><b>0</b><span>npm-зависимостей</span></div>
+          <div class="stat"><b>3</b><span>файла фронтенда</span></div>
+          <div class="stat"><b>~110 КБ</b><span>исходников целиком</span></div>
+          <div class="stat"><b>1</b><span>serverless-функция</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Финал -->
+    <section class="slide final" id="s-final" data-title="Попробовать">
+      <div class="slide__inner">
+        <span class="eyebrow rv">Попробуйте прямо сейчас</span>
+        <h2 class="h-xl rv">my-sielom-web<br><span class="mark">.vercel.app</span></h2>
+        <div class="qr rv" id="qr" role="img" aria-label="QR-код со ссылкой на my-sielom-web.vercel.app"></div>
+        <div class="hero__cta rv">
+          <a class="pill-btn pill-btn--accent" href="https://my-sielom-web.vercel.app/" target="_blank" rel="noopener">Открыть расписание →</a>
+          <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">Исходный код</a>
+        </div>
+        <div class="roadmap rv"><span>Скоро: уведомления о начале пары</span><span>Экспорт в календарь</span><span>PWA и офлайн</span></div>
+        <p class="foot">Неофициальный проект, не связан с СИЭУиП. Данные — с sielom.ru.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script>
+  (() => {
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const slides = $$(".slide");
+    const pad = (n) => String(n).padStart(2, "0");
+
+    // ---------- Навигация ----------
+    const dots = $("#dots");
+    slides.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.setAttribute("aria-label", `${i + 1}. ${s.dataset.title}`);
+      b.title = s.dataset.title;
+      b.addEventListener("click", () => go(i));
+      dots.append(b);
+    });
+    let current = 0;
+    const go = (i) => slides[Math.max(0, Math.min(slides.length - 1, i))].scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    const setCurrent = (i) => {
+      current = i;
+      $$("button", dots).forEach((b, j) => b.setAttribute("aria-current", j === i));
+      $("#counter").textContent = `${pad(i + 1)} / ${pad(slides.length)}`;
+      $("#bar").style.width = `${(i / (slides.length - 1)) * 100}%`;
+      $("#hint").classList.toggle("is-hidden", i > 0);
+    };
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) e.target.classList.add("is-in");
+        if (e.intersectionRatio >= 0.5) setCurrent(slides.indexOf(e.target));
+      });
+    }, { threshold: [0.15, 0.5] });
+    slides.forEach((s) => io.observe(s));
+    setCurrent(0);
+
+    // ---------- Тема ----------
+    const themes = ["system", "light", "dark"];
+    const applyTheme = (t) => {
+      if (t === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+      try { localStorage.setItem("deck.theme", t); } catch {}
+      $("#themeBtn").title = `Тема: ${{ system: "системная", light: "светлая", dark: "тёмная" }[t]} (D)`;
+    };
+    let theme = (() => { try { return localStorage.getItem("deck.theme") || "system"; } catch { return "system"; } })();
+    applyTheme(theme);
+    const cycleTheme = () => { theme = themes[(themes.indexOf(theme) + 1) % themes.length]; applyTheme(theme); };
+    $("#themeBtn").addEventListener("click", cycleTheme);
+
+    // ---------- Клавиатура ----------
+    document.addEventListener("keydown", (e) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.target.closest("input:not([type=range]), textarea")) return;
+      const row = $$(".key-row").find((r) => r.dataset.code.split(" ").includes(e.code));
+      if (row && slides[current].id === "s-keys") {
+        row.classList.add("is-hit");
+        setTimeout(() => row.classList.remove("is-hit"), 450);
+        if (e.code === "Slash") e.preventDefault();
+      }
+      if (e.code === "KeyD") { cycleTheme(); return; }
+      if (e.target.matches("input[type=range]")) return;
+      if (["ArrowDown", "PageDown", "Space"].includes(e.code)) { e.preventDefault(); go(current + 1); }
+      else if (["ArrowUp", "PageUp"].includes(e.code)) { e.preventDefault(); go(current - 1); }
+      else if (e.code === "Home") { e.preventDefault(); go(0); }
+      else if (e.code === "End") { e.preventDefault(); go(slides.length - 1); }
+    });
+
+    // ---------- Демо «живой пары» — та же логика, что в app.js ----------
+    const LESSONS = [
+      { n: 4, s: "13:40", e: "15:00", t: "Проектирование и дизайн информационных систем", room: "115", who: "Гагилев А.Е." },
+      { n: 5, s: "15:20", e: "16:40", t: "Стандартизация, сертификация и техническое документоведение", room: "115", who: "Паланий Н.П." },
+      { n: 6, s: "16:50", e: "18:10", t: "Физическая культура", room: "003", who: "Мандзюк А.А." },
+    ];
+    const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+    const fmt = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+    const dur = (m) => m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч${m % 60 ? ` ${m % 60} мин` : ""}`;
+    const tl = $("#tl");
+    tl.innerHTML = LESSONS.map((l, i) => `
+      ${i ? `<div class="break" data-break="${i}"></div>` : ""}
+      <div class="tl-row" data-i="${i}">
+        <div class="tl-time">${l.s}<small>${l.e}</small></div>
+        <span class="tl-dot"></span>
+        <div class="card">
+          <div class="card__chip"></div>
+          <div class="card__title">${l.t}</div>
+          <div class="card__meta"><span class="room">${l.room}</span>${l.who}</div>
+          <div class="card__bar"><i></i></div>
+        </div>
+      </div>`).join("");
+    const renderDemo = (cur) => {
+      $("#demoClock").textContent = fmt(cur);
+      const nextIdx = LESSONS.findIndex((l) => cur < toMin(l.s));
+      const nowIdx = LESSONS.findIndex((l) => cur >= toMin(l.s) && cur <= toMin(l.e));
+      LESSONS.forEach((l, i) => {
+        const row = $(`.tl-row[data-i="${i}"]`, tl), s = toMin(l.s), e = toMin(l.e);
+        const kind = cur < s ? "soon" : cur <= e ? "now" : "past";
+        const isNext = nowIdx === -1 && i === nextIdx;
+        row.className = `tl-row is-${kind}${isNext ? " is-next" : ""}`;
+        const chip = $(".card__chip", row);
+        if (kind === "now") { chip.innerHTML = `<span class="live-dot"></span>Идёт · ещё ${dur(e - cur)}`; $(".card__bar i", row).style.width = `${Math.round((cur - s) / (e - s) * 100)}%`; }
+        else if (isNext) chip.textContent = s - cur <= 180 ? `Через ${dur(s - cur)}` : "Следующая";
+        else chip.textContent = "";
+      });
+      $$(".break", tl).forEach((b) => {
+        const i = +b.dataset.break, gap = toMin(LESSONS[i].s) - toMin(LESSONS[i - 1].e);
+        b.textContent = `Перемена ${gap} мин`;
+      });
+    };
+    const scrub = $("#scrub");
+    scrub.addEventListener("input", () => renderDemo(+scrub.value));
+    renderDemo(+scrub.value);
+
+    // ---------- Слайдер светлая/тёмная ----------
+    const cmp = $("#compare");
+    $("input", cmp).addEventListener("input", (e) => cmp.style.setProperty("--pos", `${e.target.value}%`));
+
+    // ---------- Табы трёх расписаний ----------
+    const KIND_COPY = [
+      ["Группы", "Навигация «корпус → курс → группа» с хлебными крошками или мгновенный поиск по названию — клавиша / сразу ставит курсор в поиск."],
+      ["Преподаватели", "Все пары преподавателя за неделю: аудитории, группы и подгруппы. В официальной версии до преподавателя нельзя дойти из карточки пары — здесь это один клик."],
+      ["Кабинеты", "Занятость любой аудитории по корпусам: кто, когда и с какой группой. Удобно, чтобы найти свободный кабинет или понять, куда переехала пара."],
+    ];
+    const showKind = (i) => {
+      $$("#kindTabs .tab").forEach((t, j) => t.setAttribute("aria-selected", j === i));
+      $$("#kindStage .shot").forEach((s, j) => (s.hidden = j !== i));
+      $("#kindCopy").innerHTML = `<b>${KIND_COPY[i][0]}</b>${KIND_COPY[i][1]}`;
+    };
+    $$("#kindTabs .tab").forEach((t) => t.addEventListener("click", () => showKind(+t.dataset.i)));
+    showKind(0);
+
+    // ---------- QR ----------
+    try {
+      const qr = qrcode(0, "M");
+      qr.addData("https://my-sielom-web.vercel.app/");
+      qr.make();
+      $("#qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+    } catch { $("#qr").hidden = true; }
+  })();
+  </script>
+</body>
+</html>
