@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/schedule/api/:path*", "destination": "/api/schedule/:path*" },
+    { "source": "/strapi/api/:path*",   "destination": "/api/strapi/:path*" }
+  ]
+}
