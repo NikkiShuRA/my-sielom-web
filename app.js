@@ -52,6 +52,7 @@
     week: null,
     lessons: [],
     divisionLessons: [],
+    cabinets: new Map(),
     bells: new Map(),
     lessonNums: [],
     employeePhotos: new Map(),
@@ -297,7 +298,11 @@
           byType.group.push({ type: "group", id: g.id_1c, title: g.name, hint: div ? divisionDisplayLabel(div) : "", divisionId: g.divisionId });
         }
       } else if (type === "room") {
-        byType.room.push({ type: "room", id, title: id, divisionId: null });
+        const cab = state.cabinets.get(id);
+        const num = cab ? (cab.number || cab.name) : id;
+        const stripped = num.replace(/^[А-Яа-яA-Za-z]+-/, "");
+        const div = cab ? divisionById(cab.divisionId) : null;
+        byType.room.push({ type: "room", id, title: stripped, hint: div ? divisionDisplayLabel(div) : "", divisionId: cab?.divisionId || null });
       }
     }
     Object.values(byType).forEach((arr) => arr.sort((a, b) => naturalSort(a.title, b.title)));
@@ -763,6 +768,10 @@
     const lessons = await apiFetch(`${API}/lessons/division?divisionName=${q(d.name)}&week_id=${state.week.id}`);
     if (token !== undefined && token !== weekToken) return;
     state.divisionLessons = lessons;
+    for (const l of lessons) {
+      if (l.cabinet && !state.cabinets.has(l.cabinet.id_1c))
+        state.cabinets.set(l.cabinet.id_1c, { ...l.cabinet, divisionId: state.divisionId });
+    }
     state.divisionLoaded = true;
   }
 
