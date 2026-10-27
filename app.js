@@ -1005,7 +1005,7 @@
 
   function placeHTML(l) {
     const div = divisionInfo(l.division);
-    const addr = div?.address ? div.address.replace(/,(\S)/g, ", $1") : null;
+    const addr = div?.address ? div.address.replace(/,\s*/g, " ").trim() : null;
     return `<div class="place${l.note ? " is-changed" : ""}">
       <span class="place__room">${esc(roomOf(l))}</span>
       <div class="place__text">
@@ -1084,7 +1084,9 @@
         + section("Преподаватель", personHTML(l0.teacher))
         + section(allSameGroup ? "Подгруппы" : "Группы", `<div class="sg-list">${lessons.map((l) => {
           const div = divisionInfo(l.division);
-          return `<div class="sg-row">
+          const gid = l.group?.id_1c;
+          const rowNav = gid ? ` nav-item" data-nav-type="group" data-nav-id="${esc(gid)}" data-nav-title="${esc(l.group.name)}" tabindex="0" role="button"` : `"`;
+          return `<div class="sg-row${rowNav}>
             <span class="sg sg--lg">${esc(sgMark(l))}</span>
             <div class="sg-row__text">
               <span class="sg-row__name">${esc(partLabel(l))}</span>
