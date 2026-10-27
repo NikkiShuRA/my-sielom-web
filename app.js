@@ -139,7 +139,7 @@
       store.set(EMPLOYEE_CACHE_KEY, { at: Date.now(), data: [...map.entries()] });
       renderList();
       renderWeek();
-    })();
+    })().catch(() => { employeeLoadPromise = null; }); // без фото — инициалы; повторим при следующем вызове
     return employeeLoadPromise;
   }
 

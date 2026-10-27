@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const rawQuery = req.url.split("?")[1] || "";
   const cleanQuery = rawQuery
     .split("&")
-    .filter((p) => p && !/^(\.{3}path|__path)=/.test(p))
+    .filter((p) => p && !/^(\.{3}path|__path|path)=/.test(p))
     .join("&");
   const search = cleanQuery ? "?" + cleanQuery : "";
 
