@@ -138,6 +138,11 @@
     .h-lg { font-size: clamp(32px, 4.6vw, 60px); font-weight: 800; }
     .lead { font-size: clamp(17px, 1.6vw, 21px); color: var(--c-text-2); max-width: 46ch; margin-top: 20px; text-wrap: pretty; }
     .mark { background: linear-gradient(transparent 58%, var(--c-accent) 58%, var(--c-accent) 92%, transparent 92%); padding: 0 .08em; }
+    /* В тёмной теме светлый текст на жёлтом маркере не читается: красим сам текст, маркер — тонкая полоса под ним */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .mark { color: var(--c-accent); background: linear-gradient(transparent 86%, rgba(255, 225, 108, .35) 86%, rgba(255, 225, 108, .35) 96%, transparent 96%); }
+    }
+    :root[data-theme="dark"] .mark { color: var(--c-accent); background: linear-gradient(transparent 86%, rgba(255, 225, 108, .35) 86%, rgba(255, 225, 108, .35) 96%, transparent 96%); }
     .split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
     .split--rev { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
     @media (max-width: 900px) { .split, .split--rev { grid-template-columns: 1fr; } .split--rev > :first-child { order: 2; } }
