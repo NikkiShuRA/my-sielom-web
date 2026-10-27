@@ -138,6 +138,7 @@
       state.employeePhotos = map;
       store.set(EMPLOYEE_CACHE_KEY, { at: Date.now(), data: [...map.entries()] });
       renderList();
+      renderWeek();
     })();
     return employeeLoadPromise;
   }
