@@ -162,6 +162,7 @@
 
   const naturalSort = (a, b) => a.localeCompare(b, "ru", { numeric: true });
   const initials = (parts) => parts.filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+  const abbName = (name) => { const p = name.trim().split(/\s+/); return p.length < 2 ? name : p[0] + " " + p.slice(1).map((w) => w[0] + ".").join(""); };
   const roomOf = (l) => l.cabinet ? l.cabinet.number || l.cabinet.name : "—";
 
   // Стабильный оттенок аватарки из имени
@@ -372,7 +373,7 @@
     const kind = state.selected.kind;
     const teacher = l.teacher && (full ? l.teacher.name : l.teacher.abb_name);
     const group = l.group && l.group.name;
-    const base = kind === "group" ? teacher : kind === "teacher" ? group : [l.teacher?.abb_name, group].filter(Boolean).join(" · ");
+    const base = kind === "group" ? teacher : kind === "teacher" ? group : kind === "room" ? group : [l.teacher?.abb_name, group].filter(Boolean).join(" · ");
     return base || "";
   }
 
@@ -380,8 +381,12 @@
   function partsHTML(lessons, full) {
     const sameRoom = lessons.every((l) => roomOf(l) === roomOf(lessons[0]));
     const withAvatar = full && state.selected.kind === "group";
+    const roomMode = state.selected.kind === "room";
+    const primaryOf = (l) => roomMode
+      ? (l.teacher ? abbName(l.teacher.name) : "—")
+      : roomOf(l);
 
-    if (sameRoom && lessons.length > 1) {
+    if (sameRoom && lessons.length > 1 && !roomMode) {
       const l0 = lessons[0];
       const rows = lessons.map((l) => {
         const who = whoLabel(l, full);
@@ -396,7 +401,7 @@
       const who = whoLabel(l, full);
       return `<li class="part">
         ${lessons.length > 1 && l.subgroup ? `<span class="sg" title="${esc(l.subgroup)} подгруппа">${esc(l.subgroup)}</span>` : ""}
-        <span class="room${l.note ? " is-changed" : ""}">${esc(roomOf(l))}</span>
+        <span class="room${l.note ? " is-changed" : ""}">${esc(primaryOf(l))}</span>
         ${withAvatar && l.teacher ? avatarHTML(l.teacher.name, "avatar avatar--xs") : ""}
         <span class="who" title="${esc(who)}">${esc(who)}</span>
       </li>`;
