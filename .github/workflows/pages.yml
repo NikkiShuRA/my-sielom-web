@@ -29,6 +29,10 @@ jobs:
           mkdir -p _site/about
           cp -r index.html app.js styles.css fonts.css favicon.ico manifest.webmanifest assets _site/
           cp -r docs/. _site/about/
+          # Версия в адресах стилей и скрипта: браузер не покажет новую разметку со старыми файлами из кеша
+          V="${GITHUB_SHA::7}"
+          sed -i -E "s#(styles\.css|fonts\.css)\"#\1?v=$V\"#; s#app\.js\?v=[0-9a-z]+#app.js?v=$V#" _site/index.html
+          grep -n "?v=" _site/index.html
           touch _site/.nojekyll
 
       - uses: actions/upload-pages-artifact@v3
