@@ -952,12 +952,23 @@
   function setDrawer(open) {
     $("#app").classList.toggle("is-drawer-open", open);
     $("#sidebarToggle").setAttribute("aria-expanded", open);
+    syncSidebarToggle();
+  }
+  // Подпись кнопки в шапке по состоянию панели (иконка меняется стилями)
+  function syncSidebarToggle() {
+    const app = $("#app");
+    const open = matchMedia("(max-width: 900px)").matches ? app.classList.contains("is-drawer-open") : !app.classList.contains("is-collapsed");
+    const label = open ? "Свернуть панель" : "Открыть панель";
+    const btn = $("#sidebarToggle");
+    btn.setAttribute("aria-label", label);
+    btn.title = label;
   }
   $("#drawerBackdrop").addEventListener("click", () => setDrawer(false));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && $("#app").classList.contains("is-drawer-open")) setDrawer(false);
   });
   mobileMQ.addEventListener("change", () => setDrawer(false));
+  syncSidebarToggle();
 
   let _sidebarTimer = null;
   $("#sidebarClose").addEventListener("click", () => $("#sidebarToggle").click());
@@ -980,6 +991,7 @@
       app.classList.add("is-collapsed");
       _sidebarTimer = setTimeout(() => sidebar.classList.remove("sidebar--collapsing"), 400);
     }
+    syncSidebarToggle();
   });
 
   $("#list").addEventListener("click", (e) => {

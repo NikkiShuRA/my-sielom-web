@@ -27,8 +27,13 @@
     <div class="app__head">
       <!-- Логотип -->
       <header class="brand">
-        <button class="icon-btn" id="sidebarToggle" aria-label="Панель поиска" aria-controls="sidebar" title="Панель поиска">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="3" width="15" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 3v14" stroke="currentColor" stroke-width="1.6"/><rect x="3.3" y="3.8" width="4" height="12.4" rx="2.7" fill="currentColor" opacity=".3"/></svg>
+        <button class="icon-btn" id="sidebarToggle" aria-label="Свернуть панель" aria-controls="sidebar" title="Свернуть панель">
+          <!-- панель открыта: шеврон «‹» (свернуть) -->
+          <svg class="ico-hide" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="3" width="15" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 3v14" stroke="currentColor" stroke-width="1.6"/><path d="M13.6 7.6L11.2 10l2.4 2.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <!-- панель свёрнута, в покое: простой значок панели -->
+          <svg class="ico-rest" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="3" width="15" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 3v14" stroke="currentColor" stroke-width="1.6"/><rect x="3.3" y="3.8" width="4" height="12.4" rx="2.7" fill="currentColor" opacity=".3"/></svg>
+          <!-- панель свёрнута, при наведении: шеврон «›» (развернуть) -->
+          <svg class="ico-show" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="3" width="15" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 3v14" stroke="currentColor" stroke-width="1.6"/><path d="M11.2 7.6L13.6 10l-2.4 2.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="brand__logo">
           <img src="assets/icons/logo.svg" width="40" height="40" alt="СИЭУиП логотип">
@@ -79,7 +84,13 @@
     <!-- Боковая панель -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar__head">
-        <span class="sidebar__title">Поиск</span>
+        <div class="brand__logo">
+          <img src="assets/icons/logo.svg" width="32" height="32" alt="" aria-hidden="true">
+          <div class="brand__text">
+            <span class="brand__name">СИЭУиП</span>
+            <span class="brand__sub">Расписание</span>
+          </div>
+        </div>
         <button class="icon-btn icon-btn--sm" id="sidebarClose" aria-label="Свернуть панель" aria-controls="sidebar" title="Свернуть панель">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="3" width="15" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 3v14" stroke="currentColor" stroke-width="1.6"/><path d="M13.6 7.6L11.2 10l2.4 2.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>

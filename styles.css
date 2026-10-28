@@ -321,6 +321,23 @@ svg { flex-shrink: 0; }
   box-shadow: var(--sh-xs);
   transition: width .3s var(--ease);
 }
+/* Иконка кнопки зависит от состояния панели: «‹» — можно свернуть; свёрнутая панель в покое — простой значок,
+   при наведении — «›» (развернуть) */
+#sidebarToggle .ico-show, #sidebarToggle .ico-rest { display: none; }
+.app.is-collapsed #sidebarToggle .ico-hide { display: none; }
+.app.is-collapsed #sidebarToggle .ico-rest { display: block; }
+@media (hover: hover) {
+  .app.is-collapsed:not(.is-drawer-open) #sidebarToggle:hover .ico-rest,
+  .app.is-collapsed:not(.is-drawer-open) #sidebarToggle:focus-visible .ico-rest { display: none; }
+  .app.is-collapsed:not(.is-drawer-open) #sidebarToggle:hover .ico-show,
+  .app.is-collapsed:not(.is-drawer-open) #sidebarToggle:focus-visible .ico-show { display: block; }
+}
+@media (max-width: 900px) {
+  #sidebarToggle .ico-hide { display: none; }
+  #sidebarToggle .ico-rest { display: block; }
+  .app.is-drawer-open #sidebarToggle .ico-hide { display: block; }
+  .app.is-drawer-open #sidebarToggle .ico-rest { display: none; }
+}
 .brand__logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .brand__logo img { border-radius: 50%; }
 .brand__text { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
@@ -406,8 +423,9 @@ svg { flex-shrink: 0; }
 .sidebar--collapsing > *:nth-child(5) { animation-delay: 0s; }
 
 /* Поиск */
-.sidebar__head { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 2px 0 8px; }
-.sidebar__title { font: 800 16px var(--font); letter-spacing: -.01em; }
+/* Шапка сайдбара (бренд + кнопка закрытия) нужна только шторке на телефоне; на десктопе панель сворачивает кнопка в шапке страницы */
+.sidebar__head { display: none; }
+
 .search {
   height: 40px; flex-shrink: 0;
   display: flex; align-items: center; gap: 10px;
@@ -1039,6 +1057,8 @@ svg { flex-shrink: 0; }
   }
   .app.is-drawer-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
   .search__kbd { display: none; }
+  .sidebar__head { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 2px 0 4px; }
+  .sidebar__head .brand__text { display: flex; }
 
   /* Модалка — нижняя шторка */
   .modal {
