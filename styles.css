@@ -243,11 +243,7 @@ svg { flex-shrink: 0; }
   background-size: 200% 100%;
   animation: shimmer 1.3s linear infinite;
 }
-.sk--head { height: 40px; }
-.sk--card { height: 104px; }
 .sk--row { height: 48px; }
-.sk--strip { height: 68px; }
-.sk--title { height: 56px; width: 50%; }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 
 /* ---------- Пустые состояния ---------- */
@@ -268,6 +264,20 @@ svg { flex-shrink: 0; }
 }
 .empty__icon svg { width: 24px; height: 24px; }
 .empty__icon--warn { background: var(--c-warn-bg); color: var(--c-warn); }
+.empty__icon--muted { background: var(--c-surface); color: var(--c-muted); }
+.empty { justify-content: center; }
+.spin {
+  display: block; width: 22px; height: 22px; border-radius: 50%;
+  border: 2.5px solid var(--c-line-strong); border-top-color: var(--c-accent-strong);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Полоска дней в состояниях без расписания */
+.strip--off { opacity: .45; pointer-events: none; }
+.strip--still { pointer-events: none; }
+.strip--still .strip__day, .strip--still .strip__day.is-active, .strip--still .strip__day.is-today:not(.is-active) { background: var(--c-surface); box-shadow: none; color: var(--c-faint); }
+.strip--still .strip__wd, .strip--still .strip__num { color: var(--c-faint); }
 
 .callout {
   display: flex; align-items: flex-start; gap: 10px;
@@ -758,7 +768,7 @@ svg { flex-shrink: 0; }
   display: flex; flex-direction: column; gap: 16px;
 }
 .week.is-loading .dayview { padding-top: 16px; }
-.dv-content { display: flex; flex-direction: column; gap: 16px; }
+.dv-content { flex: 1; display: flex; flex-direction: column; gap: 16px; }
 
 /* Полоса дней недели */
 .strip {
@@ -992,7 +1002,7 @@ svg { flex-shrink: 0; }
   .week-wrap { height: 100%; border-radius: var(--r-xl); }
   /* полоса дней — внизу, над панелью навигации */
   .dayview { padding: 16px 12px 0; min-height: 100%; }
-  .strip, .sk--strip { order: 99; }
+  .strip { order: 99; }
   .strip {
     top: auto; bottom: 0; margin: auto -12px 0;
     padding: 18px 12px 10px; gap: 4px;

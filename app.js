@@ -22,6 +22,8 @@
     check: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     calendar: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M2 6.5h12M5.5 1.75v2.5M10.5 1.75v2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
     clock: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.4"/><path d="M8 4.75V8l2.25 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+    calClock: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="16" cy="16" r="3.6" fill="var(--c-bg)" stroke="currentColor" stroke-width="1.5"/><path d="M16 14.5V16l1 .8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    wifiOff: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 9.5a13 13 0 0 1 18 0M6 13a8.5 8.5 0 0 1 12 0M9.2 16.4a4 4 0 0 1 5.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
     coffee: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9zM16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2M12 3.5v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   };
 
@@ -365,6 +367,30 @@
   }
 
   // ---------- Рендер: карточки пар ----------
+  // Дни недели, когда данных недели ещё нет (загрузка, «не опубликовано», ошибка): по смещению от сегодня
+  function placeholderDays() {
+    if (state.week) return weekDates();
+    const d = new Date(); d.setDate(d.getDate() + state.weekOffset * 7);
+    const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return Array.from({ length: 6 }, (_, i) => { const x = new Date(mon); x.setDate(mon.getDate() + i); return x; });
+  }
+
+  // Пустые состояния: загрузка / расписание не опубликовано / пар нет / ошибка
+  function stateHTML(kind, mode) {
+    const s = {
+      loading: { icon: '<span class="spin"></span>', title: "Загружаем расписание…", text: "Обычно это пара секунд", attrs: ' role="status"' },
+      unpublished: { icon: ICON.calClock, cls: " empty__icon--muted", title: "Расписание ещё не опубликовано", text: `На ${mode === "day" ? "этот день" : "эту неделю"} данных нет. Загляните позже.` },
+      free: { icon: ICON.coffee, title: "Пар нет", text: "Расписание есть, занятий нет — можно выдохнуть" },
+      error: { icon: ICON.wifiOff, cls: " empty__icon--warn", title: "Не удалось загрузить", text: "Проверьте подключение к интернету", retry: true },
+    }[kind];
+    return `<div class="empty"${s.attrs || ""}>
+      <span class="empty__icon${s.cls || ""}">${s.icon}</span>
+      <b>${s.title}</b>
+      <span>${s.text}</span>
+      ${s.retry ? '<button class="btn btn--accent" id="retry">Повторить</button>' : ""}
+    </div>`;
+  }
+
   function weekDates() {
     const start = parseISO(state.week.dateStart);
     return Array.from({ length: 6 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate() + i); return d; });
@@ -515,8 +541,8 @@
   }
 
   // ---------- Режим «День» ----------
-  function stripHTML(days, now) {
-    return `<div class="strip" role="tablist" aria-label="Дни недели">${days.map((d, i) => {
+  function stripHTML(days, now, mod = "") {
+    return `<div class="strip${mod ? ` strip--${mod}` : ""}" role="tablist" aria-label="Дни недели">${days.map((d, i) => {
       const have = new Set(lessonsByNum(isoDate(d)).keys());
       const count = have.size;
       // точки в два ряда: первая и вторая смена (граница — как в пересменке);
@@ -534,7 +560,8 @@
     }).join("")}</div>`;
   }
 
-  function dayViewHTML(days, now) {
+  // kind — принудительное состояние (loading / unpublished / error) вместо расписания
+  function dayViewHTML(days, now, kind = null) {
     const date = days[state.dayIndex];
     const iso = isoDate(date);
     const byNum = lessonsByNum(iso);
@@ -549,14 +576,11 @@
     }
 
     let content;
-    if (!present.length) {
-      const nextDay = days.findIndex((d, i) => i > state.dayIndex && lessonsByNum(isoDate(d)).size);
-      content = `<div class="empty">
-        <span class="empty__icon">${ICON.coffee}</span>
-        <b>Пар нет</b>
-        <span>Можно выдохнуть и заняться своими делами</span>
-        ${nextDay >= 0 ? `<button class="btn btn--soft" data-pick-day="${nextDay}">Следующий учебный день — ${WEEKDAYS_FULL[days[nextDay].getDay()].toLowerCase()}</button>` : ""}
-      </div>`;
+    if (kind) {
+      summary = "";
+      content = stateHTML(kind, "day");
+    } else if (!present.length) {
+      content = stateHTML("free", "day");
     } else {
       const next = nextNum(byNum, date, now);
       const from = state.lessonNums.indexOf(present[0]), to = state.lessonNums.indexOf(present.at(-1));
@@ -587,8 +611,9 @@
       content = `${noticeHTML([...byNum.values()].flat())}<ol class="timeline">${rows}</ol>`;
     }
 
+    const stripMod = { loading: "still", unpublished: "off", error: "off" }[kind] || "";
     return `<div class="dayview">
-      ${stripHTML(days, now)}
+      ${stripHTML(days, now, stripMod)}
       <div class="dv-content">
         <header class="dv-head">
           <div>
@@ -600,12 +625,6 @@
         ${content}
       </div>
     </div>`;
-  }
-
-  function skeletonHTML() {
-    const cards = (n) => '<div class="sk sk--card"></div>'.repeat(n);
-    if (state.view === "day") return `<div class="dayview"><div class="sk sk--strip"></div><div class="sk sk--title"></div>${cards(4)}</div>`;
-    return Array.from({ length: 6 }, () => `<section class="day"><div class="sk sk--head"></div>${cards(4)}</section>`).join("");
   }
 
   // ---------- Шапка: подпись периода ----------
@@ -652,41 +671,40 @@
     week.removeAttribute("data-anim");
     renderTodayBtn();
 
-    if (state.error) {
-      week.className = "week is-msg";
-      week.innerHTML = `<div class="empty">
-        <span class="empty__icon empty__icon--warn">${ICON.alert}</span>
-        <b>Не удалось загрузить расписание</b>
-        <span>Проверьте подключение к интернету</span>
-        <button class="btn btn--accent" id="retry">Повторить</button>
-      </div>`;
-      return;
-    }
-    if (state.loadingWeek) {
-      week.className = `week${state.view === "day" ? " is-day" : ""} is-loading`;
-      week.innerHTML = skeletonHTML();
-      return;
-    }
     const now = new Date();
-    if (!state.week) {
-      renderPeriod(null, now);
-      week.className = "week is-msg";
-      week.innerHTML = `<div class="empty"><span class="empty__icon">${ICON.calendar}</span><b>Расписание ещё не опубликовано</b><span>Загляните позже или вернитесь к текущей неделе</span></div>`;
+    const isDay = state.view === "day";
+
+    // Состояния без расписания: загрузка, ошибка, «не опубликовано». В режиме «День» остаются шапка и полоска дней.
+    const kind = state.error ? "error" : state.loadingWeek ? "loading" : !state.week ? "unpublished" : null;
+    if (kind) {
+      const days = placeholderDays();
+      if (isDay && state.dayIndex == null) {
+        const t = days.findIndex((d) => isoDate(d) === isoDate(now));
+        state.dayIndex = t >= 0 ? t : 0;
+      }
+      if (!state.error) renderPeriod(days, now);
+      if (isDay) {
+        week.className = `week is-day${kind === "loading" ? " is-loading" : ""}`;
+        week.innerHTML = dayViewHTML(days, now, kind);
+      } else {
+        week.className = `week is-msg${kind === "loading" ? " is-loading" : ""}`;
+        week.innerHTML = stateHTML(kind, "week");
+      }
       return;
     }
 
     const days = weekDates();
-    if (state.view === "day" && state.dayIndex == null) {
+    if (isDay && state.dayIndex == null) {
       const t = days.findIndex((d) => isoDate(d) === isoDate(now));
       state.dayIndex = t >= 0 ? t : 0;
     }
     renderPeriod(days, now);
     renderTodayBtn();
 
-    if (!state.lessons.length && state.view === "week") {
+    if (!state.lessons.length && !isDay) {
       week.className = "week is-msg";
-      week.innerHTML = `<div class="empty"><span class="empty__icon">${ICON.coffee}</span><b>На этой неделе пар нет</b><span>Отдыхайте — или посмотрите соседние недели</span></div>`;
-    } else if (state.view === "day") {
+      week.innerHTML = stateHTML("free", "week");
+    } else if (isDay) {
       week.className = "week is-day";
       week.innerHTML = dayViewHTML(days, now);
     } else {
