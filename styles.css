@@ -534,7 +534,6 @@ svg { flex-shrink: 0; }
   cursor: pointer;
   transition: background var(--dur);
 }
-.entity--group { padding-left: 14px; min-height: 48px; }
 .entity:hover { background: var(--c-surface); }
 .entity:active { background: var(--c-surface-2); }
 .entity.is-selected { background: var(--c-accent-tint); }
@@ -671,7 +670,14 @@ svg { flex-shrink: 0; }
 .day-head:hover .day-head__go, .day-head:focus-visible .day-head__go { opacity: 1; transform: none; color: var(--c-text-2); }
 .day.is-today .day-head__go { color: var(--c-on-accent); }
 
-.day__empty { grid-row: 2 / -1; padding: 32px 12px; text-align: center; color: var(--c-faint); }
+.day__empty {
+  grid-row: 2 / -1; padding: 24px 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  text-align: center; color: var(--c-muted);
+}
+.day__empty b { font-size: 14px; color: var(--c-text); }
+.day__empty .empty__icon { width: 44px; height: 44px; margin-bottom: 4px; border-radius: 14px; }
+.day__empty .empty__icon svg { width: 22px; height: 22px; }
 
 .shift-divider {
   display: flex; align-items: center; gap: 8px;
@@ -748,7 +754,7 @@ svg { flex-shrink: 0; }
   background: var(--c-text); color: var(--c-bg);
   font: 700 10.5px var(--font-ui);
 }
-.sg--lg { width: 40px; height: 40px; border-radius: 12px; font-size: 15px; background: var(--c-bg); color: var(--c-text); box-shadow: inset 0 0 0 1px var(--c-line); }
+.sg--lg { width: auto; min-width: 40px; height: 40px; padding: 0 10px; border-radius: 12px; white-space: nowrap; font-size: 15px; background: var(--c-bg); color: var(--c-text); box-shadow: inset 0 0 0 1px var(--c-line); }
 .room {
   display: flex; align-items: center; justify-content: center;
   min-width: 40px; padding: 2px 8px; flex-shrink: 0;
@@ -763,11 +769,11 @@ svg { flex-shrink: 0; }
 .room--lg { padding: 4px 10px; font-size: 15px; }
 .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-text-2); }
 
-/* Прошедшая пара в неделе: тусклая карточка, зачёркнутое название, серая полоска слева */
-.day .lesson.is-past { opacity: .7; }
-.day .lesson.is-past:hover { opacity: 1; }
-.day .lesson.is-past .lesson__title { text-decoration: line-through; text-decoration-color: var(--c-text-2); text-decoration-thickness: 2px; color: var(--c-text-2); }
-.day .lesson.is-past::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c-line-strong); }
+/* Прошедшая пара (неделя и день): тусклая карточка, зачёркнутое название, серая полоска слева */
+.lesson.is-past { opacity: .7; }
+.lesson.is-past:hover { opacity: 1; }
+.lesson.is-past .lesson__title { text-decoration: line-through; text-decoration-color: var(--c-text-2); text-decoration-thickness: 2px; color: var(--c-text-2); }
+.lesson.is-past::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c-line-strong); }
 
 /* Пустой слот */
 .slot {
@@ -888,8 +894,6 @@ svg { flex-shrink: 0; }
 .lesson--full .parts { gap: 8px; }
 .lesson--full .part { font-size: 14px; gap: 8px; }
 .lesson--full .who { color: var(--c-text); white-space: normal; }
-.lesson--full.is-past { opacity: .6; }
-.lesson--full.is-past:hover { opacity: 1; }
 .lesson__notes { margin: 0; font-size: 13px; line-height: 1.4; color: var(--c-warn); }
 .dayview .callout { margin-left: 84px; }
 
@@ -934,6 +938,7 @@ svg { flex-shrink: 0; }
 .meta-item { display: inline-flex; align-items: center; gap: 6px; }
 .meta-item svg { color: var(--c-muted); }
 .modal__subject { font-size: 22px; font-weight: 800; line-height: 1.25; letter-spacing: -.01em; }
+.modal__sub:empty { display: none; }
 .modal__sub { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--c-muted); }
 .modal__body { display: flex; flex-direction: column; gap: 18px; }
 
@@ -968,9 +973,6 @@ svg { flex-shrink: 0; }
 .person__label { font-size: 12.5px; color: var(--c-muted); }
 .person__name { font-size: 16px; font-weight: 700; }
 
-.facts { display: flex; flex-wrap: wrap; gap: 6px; }
-.fact { padding: 7px 12px; border-radius: var(--r-md); background: var(--c-surface); font-weight: 700; }
-.fact span { font-weight: 500; color: var(--c-muted); margin-right: 4px; }
 
 .sg-list { display: flex; flex-direction: column; gap: 6px; }
 .sg-row {

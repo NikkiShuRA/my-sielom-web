@@ -11,9 +11,17 @@
   const MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
   const MONTHS_SHORT = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
   const KIND_LABEL = { group: "Группа", teacher: "Преподаватель", room: "Кабинет" };
-  const SHIFT_BORDER = "13:30";
+  // Смена определяется по номеру пары (1–3 — первая, с 4-й — вторая): время пар в корпусах разное,
+  // например 4-я пара начинается и в 13:20, и в 13:40, поэтому границу по времени не провести
+  const isSecondShift = (num) => num >= 4;
   const EMPLOYEE_CACHE_KEY = "sielom.employees.v1";
   const EMPLOYEE_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+  // «Кабинеты» вне корпусов колледжа: в расписании они числятся за корпусом, но находятся по своему адресу
+  const EXTERNAL_PLACES = {
+    "СОКБ": { name: "Сургутская окружная клиническая больница", address: "Энергетиков 24" },
+  };
+  const externalPlace = (room) => EXTERNAL_PLACES[String(room || "").trim()] || null;
 
   const ICON = {
     bookmark: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 2.75C4 2.34 4.34 2 4.75 2h6.5c.41 0 .75.34.75.75V14l-4-2.25L4 14V2.75z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
@@ -84,7 +92,9 @@
 
   // Пара относительно текущего момента: ещё не началась / идёт / прошла
   function timing(lesson, date, now) {
-    if (isoDate(date) !== isoDate(now)) return null;
+    const day = isoDate(date), today = isoDate(now);
+    if (day < today) return { kind: "past" }; // пары прошедших дней — прошедшие
+    if (day > today) return null;
     const cur = nowMin(now), s = toMin(lesson.timeStart), e = toMin(lesson.timeEnd);
     if (cur < s) return { kind: "soon", left: s - cur };
     if (cur <= e) return { kind: "now", left: e - cur, progress: Math.round((cur - s) / (e - s) * 100) };
@@ -167,7 +177,7 @@
   const naturalSort = (a, b) => a.localeCompare(b, "ru", { numeric: true });
   const initials = (parts) => parts.filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
   const abbName = (name) => { const p = name.trim().split(/\s+/); return p.length < 2 ? name : p[0] + " " + p.slice(1).map((w) => w[0] + ".").join(""); };
-  const roomOf = (l) => l.cabinet ? l.cabinet.number || l.cabinet.name : "—";
+  const roomOf = (l) => (l.cabinet && (l.cabinet.number || l.cabinet.name)) || "—"; // кабинет не указан — «—»
 
   // Стабильный оттенок аватарки из имени
   function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
@@ -233,10 +243,11 @@
       .sort((a, b) => naturalSort(a.number || a.name, b.number || b.name))
       .filter((c) => !/^дистант$/i.test(c.number || c.name))
       .map((c) => {
-        const num = c.number || c.name;
+        const num = c.number || c.name || "—";
         const stripped = num.replace(/^[А-Яа-яA-Za-z]+-/, "");
-        const addr = divisionAddrPart(divisionById(state.divisionId));
-        const hint = c.number ? `${c.number}${addr ? " · " + addr : ""}` : c.name;
+        // подсказка — полный номер («МК-409»), только если он отличается от номера в значке; адрес не нужен, корпус уже выбран
+        const ext = externalPlace(c.number || c.name);
+        const hint = ext ? ext.address : c.number ? (c.number !== stripped ? c.number : "") : c.name;
         return { type: "room", id: c.id_1c, title: stripped, hint };
       });
   }
@@ -282,6 +293,11 @@
     } else if (e.type === "room") {
       lead = `<span class="entity__badge">${esc(e.title)}</span>`;
       text = `<span class="entity__title">Кабинет ${esc(e.title)}</span><span class="entity__hint">${esc(e.hint)}</span>`;
+    } else if (e.type === "group") {
+      // префикс группы — в значке, в названии остаётся остаток («ЮСО-25/11» → «ЮСО» и «25/11»)
+      const g = groupParts(e.title);
+      lead = `<span class="entity__badge">${esc(g.mark)}</span>`;
+      text = `<span class="entity__title">${esc(g.rest)}</span>${e.hint ? `<span class="entity__hint">${esc(e.hint)}</span>` : ""}`;
     } else {
       text = `<span class="entity__title">${esc(e.title)}</span>${e.hint ? `<span class="entity__hint">${esc(e.hint)}</span>` : ""}`;
     }
@@ -372,8 +388,9 @@
     const rooms = idx ? sortHits(idx.rooms
       .filter((c) => !/^дистант$/i.test(c.number || c.name))
       .map((c) => {
-        const num = c.number || c.name;
-        const addr = divisionAddrPart(divisionById(c.divisionId));
+        const num = c.number || c.name || "—";
+        const addr = externalPlace(num)?.address || divisionAddrPart(divisionById(c.divisionId));
+        // в общем поиске корпусов много, поэтому адрес в подсказке остаётся
         return { type: "room", id: c.id_1c, title: num.replace(/^[А-Яа-яA-Za-z]+-/, ""), hint: c.number ? `${c.number}${addr ? " · " + addr : ""}` : c.name, divisionId: c.divisionId, full: num };
       })
       .filter((e) => hit(`${e.title} ${e.full}`, e.hint))) : [];
@@ -599,8 +616,7 @@
     const items = [];
     let prevIsAfterShift = false;
     for (const num of state.lessonNums) {
-      const bells = state.bells.get(num);
-      const isAfterShift = bells ? bells.timeStart >= SHIFT_BORDER : false;
+      const isAfterShift = isSecondShift(num);
       if (items.length && isAfterShift && !prevIsAfterShift) items.push('<div class="shift-divider" role="separator">пересменка</div>');
       prevIsAfterShift = isAfterShift;
 
@@ -609,7 +625,7 @@
       items.push(lessonCardHTML(lessons, date, now, { next: num === next }));
     }
     const rows = 1 + items.length; // шапка + строки пар
-    const body = byNum.size ? items.join("") : '<div class="day__empty">Пар нет</div>';
+    const body = byNum.size ? items.join("") : `<div class="day__empty"><span class="empty__icon">${ICON.coffee}</span><b>Пар нет</b></div>`;
 
     return `
       <section class="day${isToday ? " is-today" : iso < isoDate(now) ? " is-past" : ""}" style="--rows:${rows}">
@@ -634,7 +650,7 @@
       // точки в два ряда: первая и вторая смена (граница — как в пересменке);
       // на каждую пару сетки — точка, свободная пара — пустая
       const row = (second) => `<span>${state.lessonNums
-        .filter((n) => ((state.bells.get(n)?.timeStart ?? "") >= SHIFT_BORDER) === second)
+        .filter((n) => isSecondShift(n) === second)
         .map((n) => `<i${have.has(n) ? "" : ' class="is-empty"'}></i>`).join("")}</span>`;
       const active = i === state.dayIndex;
       return `<button class="strip__day${active ? " is-active" : ""}${isoDate(d) === isoDate(now) ? " is-today" : ""}" data-pick-day="${i}" role="tab" aria-selected="${active}"
@@ -674,7 +690,7 @@
       let prevIsAfterShift = false;
       for (const num of state.lessonNums.slice(from, to + 1)) {
         const bells = state.bells.get(num);
-        const isAfterShift = bells ? bells.timeStart >= SHIFT_BORDER : false;
+        const isAfterShift = isSecondShift(num);
         if (rows && isAfterShift && !prevIsAfterShift) rows += '<li class="tl-row tl-row--shift"><span></span><span class="tl-rail"></span><div class="shift-divider" role="separator">пересменка</div></li>';
         prevIsAfterShift = isAfterShift;
 
@@ -831,9 +847,10 @@
     const week = $("#week");
     week.scrollLeft = 0; week.scrollTop = 0;
     const today = week.querySelector(".day.is-today");
-    if (state.view === "week" && today && today.offsetLeft + today.offsetWidth > week.clientWidth) {
-      week.scrollLeft = today.offsetLeft - 8;
-    }
+    if (state.view !== "week" || !today) return;
+    // положение колонки внутри прокручиваемой области (offsetLeft считается от body и включает ширину сайдбара)
+    const left = today.getBoundingClientRect().left - week.getBoundingClientRect().left;
+    if (left + today.offsetWidth > week.clientWidth) week.scrollLeft = left - 8;
   }
 
   function renderHeader() {
@@ -1171,11 +1188,15 @@
   function placeHTML(l) {
     const div = divisionInfo(l.division);
     const addr = div?.address ? div.address.replace(/,\s*/g, " ").trim() : null;
+    // в плашке — номер без буквенного префикса, полный номер («Р-213») — рядом с адресом
+    const full = roomOf(l), short = full.replace(/^[А-Яа-яA-Za-z]+-/, "");
+    const ext = externalPlace(full);
+    const line = ext ? ext.address : [addr, full !== short ? full : ""].filter(Boolean).join(" · ");
     return `<div class="place${l.note ? " is-changed" : ""}">
-      <span class="place__room">${esc(roomOf(l))}</span>
+      <span class="place__room" aria-label="Кабинет ${esc(full)}">${esc(short)}</span>
       <div class="place__text">
-        <span class="place__corps">${div ? esc("Корпус " + div.corps) : "Кабинет"}</span>
-        ${addr ? `<span class="place__addr">${esc(addr)}</span>` : ""}
+        <span class="place__corps">${ext ? esc(ext.name) : div ? esc("Корпус " + div.corps) : "Кабинет"}</span>
+        ${line ? `<span class="place__addr">${esc(line)}</span>` : ""}
       </div>
     </div>`;
   }
@@ -1205,17 +1226,24 @@
     return '<span class="chip chip--muted">Прошла</span>';
   }
 
+  function groupParts(name) {
+    const mark = String(name || "").match(/^[А-ЯЁA-Z]+/i)?.[0] || "";
+    const rest = String(name || "").slice(mark.length).replace(/^[-\s]+/, "");
+    return rest ? { mark, rest } : { mark: "•", rest: String(name || "") };
+  }
+
   function openLesson(lessons) {
     if (!lessons || !lessons.length) return;
     const l0 = lessons[0];
     const d = parseISO(l0.date);
     const subject = l0.subject ? l0.subject.name : "Пара";
-    const abbName = l0.subject?.abb_name || "";
     const multi = lessons.length > 1;
     const sameTeacher = lessons.every((l) => l.teacher?.name === l0.teacher?.name);
     const allSameGroup = lessons.every((l) => l.group?.name === l0.group?.name);
     const sameRoom = lessons.every((l) => roomOf(l) === roomOf(l0));
-    const sgMark = (l) => l.subgroup || l.group?.name.match(/^[А-ЯЁA-Z]+/i)?.[0] || "•";
+    const sgMark = (l) => l.subgroup || (l.group ? groupParts(l.group.name).mark : "•");
+    // название группы в строке без префикса, если он уже есть в значке
+    const rowName = (l) => l.subgroup || !l.group ? partLabel(l) : groupParts(l.group.name).rest;
     const partLabel = (l) => l.subgroup ? `${l.subgroup} подгруппа` : (!allSameGroup && l.group ? l.group.name : "Группа");
 
     $("#mHead").innerHTML = `
@@ -1225,7 +1253,7 @@
         <span class="meta-item">${esc(l0.lessonNumber)}-я пара</span>
       </div>
       <h2 class="modal__subject" id="mTitle">${esc(subject)}</h2>
-      <div class="modal__sub">${statusChipHTML(l0, d)}${abbName && abbName !== subject ? `<span>${esc(abbName)}</span>` : ""}</div>`;
+      <div class="modal__sub">${statusChipHTML(l0, d)}</div>`;
 
     const notes = lessons.filter((l) => l.note);
     const callout = notes.length
@@ -1236,13 +1264,18 @@
     if (!multi) {
       // Обычная пара
       const grpMeta = l0.group ? state.groups.find((g) => g.name === l0.group.name) : null;
-      const facts = [
-        l0.group ? `<span class="fact${grpMeta ? " nav-item" : ""}"${grpMeta ? ` data-nav-type="group" data-nav-id="${esc(grpMeta.id_1c)}" data-nav-title="${esc(l0.group.name)}" tabindex="0" role="button" aria-label="Расписание: ${esc(l0.group.name)}"` : ""}><span>Группа</span> ${esc(l0.group.name)}</span>` : "",
-        l0.subgroup ? `<span class="fact"><span>Подгруппа</span> ${esc(l0.subgroup)}</span>` : "",
-      ].join("");
+      // Группа — той же строкой, что и в списке нескольких групп: значок, название и переход к расписанию
+      const nav = grpMeta ? ` nav-item" data-nav-type="group" data-nav-id="${esc(grpMeta.id_1c)}" data-nav-title="${esc(l0.group.name)}" tabindex="0" role="button" aria-label="Расписание: ${esc(l0.group.name)}"` : `"`;
+      const groupRow = l0.group ? `<div class="sg-list"><div class="sg-row${nav}>
+          <span class="sg sg--lg">${esc(sgMark(l0))}</span>
+          <div class="sg-row__text">
+            <span class="sg-row__name">${esc(l0.subgroup ? l0.group.name : groupParts(l0.group.name).rest)}</span>
+            ${l0.subgroup ? `<span class="sg-row__label">${esc(l0.subgroup)} подгруппа</span>` : ""}
+          </div>
+        </div></div>` : "";
       body = section("Где", placeHTML(l0))
         + section("Преподаватель", personHTML(l0.teacher))
-        + (facts ? section("Кто занимается", `<div class="facts">${facts}</div>`) : "");
+        + (groupRow ? section("Группа", groupRow) : "");
     } else if (sameTeacher) {
       // Один преподаватель ведёт несколько подгрупп / групп
       body = (sameRoom ? section("Где", placeHTML(l0)) : "")
@@ -1254,7 +1287,7 @@
           return `<div class="sg-row${rowNav}>
             <span class="sg sg--lg">${esc(sgMark(l))}</span>
             <div class="sg-row__text">
-              <span class="sg-row__name">${esc(partLabel(l))}</span>
+              <span class="sg-row__name">${esc(rowName(l))}</span>
               ${l.subgroup && !allSameGroup && l.group ? `<span class="sg-row__label">${esc(l.group.name)}</span>` : ""}
             </div>
             ${sameRoom ? "" : `<div class="sg-row__room"><span class="room room--lg${l.note ? " is-changed" : ""}">${esc(roomOf(l))}</span>${div ? `<span>корп. ${esc(div.corps)}</span>` : ""}</div>`}
