@@ -97,11 +97,15 @@
     }
     .topnav > * { pointer-events: auto; }
     .brand {
-      display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px 6px 6px; border-radius: 15px;
       background: color-mix(in srgb, var(--c-bg) 82%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       box-shadow: var(--sh-sm); text-decoration: none; font: 700 15px/1 var(--font);
     }
-    .brand img { width: 30px; height: 30px; }
+    .brand > img { width: 34px; height: 34px; border-radius: 9px; }
+    .brand__txt { display: grid; gap: 2px; }
+    .brand__txt b { font-weight: 700; line-height: 1.1; }
+    .brand__for { display: flex; align-items: center; gap: 5px; font: 500 11.5px/1.2 var(--font-ui); color: var(--c-muted); }
+    .brand__for img { width: 14px; height: 14px; object-fit: contain; }
     .topnav__right { display: flex; gap: 8px; }
     .pill-btn {
       height: 42px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
@@ -491,8 +495,9 @@
       .appview .tl-start { font-size: 14px; }
       .demo__bar { padding-left: 14px; padding-right: 14px; }
       .topnav { top: 10px; left: 10px; right: 10px; gap: 8px; }
-      .brand { padding: 5px; font-size: 0; gap: 0; }   /* только логотип, без подписи */
-      .brand img { width: 32px; height: 32px; }
+      .brand { padding: 5px; gap: 0; border-radius: 14px; }   /* только логотип, без подписи */
+      .brand__txt { display: none; }
+      .brand > img { width: 32px; height: 32px; border-radius: 9px; }
       .topnav__right { gap: 6px; }
       .pill-btn { height: 38px; padding: 0 14px; font-size: 13px; }
       .counter { display: none; }
@@ -537,7 +542,7 @@
   <div class="progress" aria-hidden="true"><div class="progress__bar" id="bar"></div></div>
 
   <nav class="topnav">
-    <a class="brand" href="#s-hero"><img src="icon.svg" alt="" width="30" height="30">Мой Сиелом</a>
+    <a class="brand" href="#s-hero"><img src="icon.svg" alt="" width="34" height="34"><span class="brand__txt"><b>Мой Сиелом</b><span class="brand__for">для <img src="edu-logo.webp" alt="" width="14" height="14"> СИЭУиП</span></span></a>
     <div class="topnav__right">
       <span class="pill-btn counter" id="counter" aria-live="polite">01 / 10</span>
       <button class="pill-btn" id="themeBtn" title="Сменить тему (D)" aria-label="Сменить тему">
