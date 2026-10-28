@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Мой Сиелом — презентация</title>
-  <meta name="description" content="Неофициальный клиент расписания Сургутского института экономики, управления и права: живая текущая пара, тёмная тема, расписание групп, преподавателей и кабинетов.">
+  <meta name="description" content="Неофициальный клиент расписания Сургутского института экономики, управления и права: живая текущая пара, свободные кабинеты всего корпуса, гибкий поиск, тёмная тема и мобильная версия. Со стендом, где можно двигать время.">
   <meta property="og:title" content="Мой Сиелом — расписание СИЭУиП так, как должно быть">
-  <meta property="og:description" content="Неофициальный клиент расписания СИЭУиП: живая текущая пара, тёмная тема, горячие клавиши, мобильная версия.">
+  <meta property="og:description" content="Неофициальный клиент расписания СИЭУиП: живая пара, свободные кабинеты корпуса, гибкий поиск, тёмная тема, мобильная версия и стенд со временем.">
   <meta property="og:image" content="screenshots/day-light.webp">
   <meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
@@ -386,6 +386,17 @@
     .phones .phone:nth-child(2) { margin-top: 48px; }
     @media (max-width: 700px) { .phones .phone:nth-child(3) { display: none; } }
 
+
+    /* ===== Весь корпус и стенд ===== */
+    .bld { position: relative; }
+    .bld__phones { position: absolute; right: -3%; bottom: -9%; z-index: 2; display: block; }
+    .bld__phones .phone { --pw: min(176px, 20vw); }
+    .bld__phones [hidden] { display: none; }
+    .lab__shot { display: block; transition: transform .35s var(--ease), box-shadow .35s var(--ease); }
+    .lab__shot:hover { transform: translateY(-4px); }
+    .lab__note { display: inline-flex; align-items: center; height: 52px; padding: 0 6px; font-size: 14px; color: var(--c-muted); }
+    @media (max-width: 900px) { .bld__phones { position: static; margin-top: 18px; text-align: center; } .bld__phones .phone { --pw: min(200px, 54vw); margin: 0 auto; } }
+
     /* ===== Было/стало ===== */
     .vs { display: grid; grid-template-columns: auto 1fr auto; gap: clamp(16px, 3vw, 40px); align-items: center; }
     .vs__label { text-align: center; font: 700 15px/1.2 var(--font); margin-bottom: 12px; }
@@ -421,9 +432,13 @@
     .roll__name { display: flex; align-items: center; gap: .22em; min-width: 0; color: inherit; text-decoration: none; font: 800 clamp(40px, 6.4vw, 100px)/1 var(--font); letter-spacing: -.035em; white-space: nowrap; }
     .roll__text {
       transition: background-size .5s var(--ease), color .3s;
-      background: linear-gradient(transparent 70%, var(--c-accent) 70%, var(--c-accent) 92%, transparent 92%) no-repeat 0 0 / 0 100%;
+      --roll-line: var(--c-accent);
+      background: linear-gradient(transparent 70%, var(--roll-line) 70%, var(--roll-line) 92%, transparent 92%) no-repeat 0 0 / 0 100%;
       padding: 0 .04em;
     }
+    /* в тёмной теме светлый текст на ярко-жёлтой полосе слепит: полоса приглушена */
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .roll__text { --roll-line: rgba(255, 225, 108, .3); } }
+    :root[data-theme="dark"] .roll__text { --roll-line: rgba(255, 225, 108, .3); }
     .roll__name:hover .roll__text, .roll__name:focus-visible .roll__text { background-size: 100% 100%; }
     .roll__arrow { font-size: .34em; font-weight: 700; color: var(--c-muted); align-self: flex-start; margin-top: .3em; transition: transform .3s var(--ease), color .3s; }
     .roll__name:hover .roll__arrow { transform: translate(.15em, -.15em); color: var(--c-accent-strong); }
@@ -536,6 +551,90 @@
       .qr { width: 168px; height: 168px; }
       .final .h-xl { font-size: clamp(24px, 7.4vw, 32px); overflow-wrap: anywhere; }   /* длинный адрес в одну строку */
     }
+  
+
+    /* ===== Плавные переключения ===== */
+    .tabs { position: relative; }
+    .tab { position: relative; z-index: 1; }
+    .tab[aria-selected="true"] { background: transparent; }
+    .tabs__thumb { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 999px; background: var(--c-accent); opacity: 0; pointer-events: none; }
+    .tabs__thumb.is-ready { opacity: 1; transition: transform .4s var(--ease), width .4s var(--ease); }
+    .tab-copy.rv, .caption { transition: opacity .35s var(--ease), transform .35s var(--ease); }
+    .tab-copy.is-swap, .caption.is-swap { opacity: 0; transform: translateY(8px); transition-duration: .17s; }
+    .bld__phones { display: grid; }
+    .bld__phones .phone { grid-area: 1 / 1; transition: opacity .45s var(--ease), transform .45s var(--ease); }
+    .bld__phones .phone.is-off { opacity: 0; transform: translateY(18px) scale(.96); pointer-events: none; }
+    @keyframes swapIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+    .swap-in { animation: swapIn .5s var(--ease); }
+    @media (prefers-reduced-motion: reduce) { .swap-in { animation: none; } .tabs__thumb.is-ready, .bld__phones .phone { transition: none; } }
+    @media (max-width: 900px) { .bld__phones { justify-items: center; } }
+
+    /* ===== Скоро: пунктирные плашки, чтобы не путать с готовым ===== */
+    .roadmap { align-items: center; }
+    .roadmap span.roadmap__label { padding: 8px 14px; border-radius: 999px; background: var(--c-accent-tint); color: var(--c-accent-ink); box-shadow: none; font-weight: 700; font-size: 13px; letter-spacing: .02em; }
+    .roadmap span.soon { background: transparent; box-shadow: none; border: 1.5px dashed var(--c-line-strong); color: var(--c-muted); display: inline-flex; align-items: center; gap: 8px; }
+    .roadmap span.soon::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; }
+
+    /* ===== Движение ===== */
+    .demo__play { width: 34px; height: 34px; flex: none; padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: var(--c-accent); color: var(--c-on-accent); display: grid; place-items: center; transition: transform .15s var(--ease), background .2s; }
+    .demo__play:hover { background: var(--c-accent-strong); transform: scale(1.08); }
+    .demo__play:active { transform: scale(.94); }
+    .demo__play svg { width: 14px; height: 14px; display: block; fill: currentColor; }
+    .hero__chip b { display: inline-block; min-width: 1.3em; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .hero__glow { display: none; }
+    .tabs__auto { height: 3px; width: min(100%, 320px); margin-top: 10px; border-radius: 3px; background: var(--c-line); overflow: hidden; transition: opacity .3s; }
+    .tabs__auto i { display: block; height: 100%; width: var(--p, 0%); background: var(--c-accent-strong); }
+    .tabs__auto.is-off { opacity: 0; }
+    @media (prefers-reduced-motion: no-preference) {
+      /* свечение за обложкой, медленно плывёт; прожектор следует за курсором */
+      .hero__glow { display: block; position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+      .hero__glow i { position: absolute; width: 46vw; height: 46vw; max-width: 640px; max-height: 640px; border-radius: 50%; filter: blur(80px); opacity: .5; }
+      .hero__glow i:nth-child(1) { left: -8%; top: -12%; background: radial-gradient(circle, rgba(255, 225, 108, .75), transparent 68%); animation: drift1 16s ease-in-out infinite alternate; }
+      .hero__glow i:nth-child(2) { right: -10%; top: 22%; background: radial-gradient(circle, rgba(255, 170, 90, .45), transparent 68%); animation: drift2 21s ease-in-out infinite alternate; }
+      @keyframes drift1 { to { transform: translate(14vw, 10vh) scale(1.2); } }
+      @keyframes drift2 { to { transform: translate(-12vw, -8vh) scale(.85); } }
+      .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(520px circle at var(--sx, 50%) var(--sy, 28%), rgba(255, 225, 108, .16), transparent 70%); }
+      .hero .slide__inner { position: relative; z-index: 1; }
+
+      /* заголовки: слова выезжают из-под маски, маркер дорисовывается */
+      .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .16em; margin-bottom: -.16em; }
+      .w > i { display: inline-block; font-style: normal; transform: translateY(112%); transition: transform .85s var(--ease) calc(var(--wi) * 55ms + 150ms); }
+      .is-in .w > i { transform: none; }
+      .mark { background-repeat: no-repeat !important; background-size: 0% 100% !important; transition: background-size .9s var(--ease) .55s; }
+      .is-in .mark { background-size: 100% 100% !important; }
+
+      /* списки: пункты появляются по очереди */
+      .bullets.rv li { opacity: 0; transform: translateX(-14px); transition: opacity .55s var(--ease), transform .55s var(--ease); transition-delay: calc(var(--i) * 90ms + 280ms); }
+      .is-in .bullets.rv li { opacity: 1; transform: none; }
+      .is-in .bullets--bad.rv li .ico { animation: pop .5s var(--ease) both; animation-delay: calc(var(--i) * 90ms + 420ms); }
+      @keyframes pop { 0% { transform: scale(.4) rotate(-20deg); } 70% { transform: scale(1.15); } 100% { transform: none; } }
+
+      /* обложка: плавающий телефон и плашка, параллакс по курсору */
+      .hero__stage { transition: translate .25s var(--ease); translate: calc(var(--mx, 0) * -10px) calc(var(--my, 0) * -6px); }
+      .hero__stage .phone { animation: float 7s ease-in-out infinite; translate: calc(var(--mx, 0) * 22px) calc(var(--my, 0) * 12px); transition: translate .25s var(--ease); }
+      .hero__chip { translate: calc(var(--mx, 0) * 30px) calc(var(--my, 0) * 16px); transition: translate .25s var(--ease); }
+      @keyframes float { 50% { transform: translateY(-12px) rotate(.6deg); } }
+      .hero__chip b.tick { animation: tick .45s var(--ease); }
+      @keyframes tick { 0% { transform: translateY(-60%); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+      /* точка «сейчас» на таймлайне мигает и расходится кольцом */
+      .appview .tl-row.is-now .tl-dot, .appview .tl-row--shift.is-now .tl-dot--break { animation: dot-ping 1.5s ease-out infinite; }
+      @keyframes dot-ping { 0% { box-shadow: 0 0 0 0 rgba(242, 194, 0, .7); opacity: 1; } 45% { opacity: .45; } 70% { box-shadow: 0 0 0 11px rgba(242, 194, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(242, 194, 0, 0); opacity: 1; } }
+
+      /* карточки и плитки */
+      .tile { transition: transform .35s var(--ease), box-shadow .35s var(--ease); }
+      .tile:hover { transform: translateY(-5px); box-shadow: var(--sh-lg); }
+      .tile:hover .tile__ico { animation: wiggle .6s var(--ease); }
+      @keyframes wiggle { 30% { transform: rotate(-10deg) scale(1.1); } 60% { transform: rotate(8deg) scale(1.1); } }
+      [data-tilt] { transition: transform .2s ease-out; transform-style: preserve-3d; will-change: transform; }
+      .pill-btn--accent { position: relative; }
+      .final .pill-btn--accent { animation: glow 2.6s ease-in-out infinite; }
+      @keyframes glow { 50% { box-shadow: 0 0 0 10px rgba(255, 225, 108, .18), var(--sh-sm); } }
+      .final .qr { animation: float 8s ease-in-out infinite; }
+      .keys .key-row.is-hit { transform: translateX(8px); }
+      .key-row { transition: transform .25s var(--ease), background .25s var(--ease); }
+    }
+    @media (hover: none) { .hero__glow i { filter: blur(60px); } }
   </style>
 </head>
 <body>
@@ -559,18 +658,20 @@
 
     <!-- 1. Обложка -->
     <section class="slide hero" id="s-hero" data-title="Обложка">
+      <div class="hero__glow" aria-hidden="true"><i></i><i></i></div>
       <div class="slide__inner">
         <a class="eyebrow rv" href="https://sielom.ru/" target="_blank" rel="noopener"><img class="eyebrow__logo" src="edu-logo.webp" alt="" width="18" height="18">Сургутский институт экономики, управления и права</a>
         <h1 class="h-xl rv">Расписание,<br>которое <span class="mark">понимает время</span></h1>
-        <p class="lead rv"><b>Мой Сиелом</b> — неофициальный клиент расписания <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a>. Те же данные, что на sielom.ru, — но с живой текущей парой, тёмной темой и нормальной мобильной версией.</p>
+        <p class="lead rv"><b>Мой Сиелом</b> — неофициальный клиент расписания <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a>. Те же данные, что на sielom.ru, — но с живой текущей парой, свободными кабинетами всего корпуса, тёмной темой и нормальной мобильной версией.</p>
         <div class="hero__cta rv">
           <a class="pill-btn pill-btn--accent" href="https://nikkishura.github.io/my-sielom-web/" target="_blank" rel="noopener">Открыть расписание →</a>
+          <a class="pill-btn" href="../demo.html" target="_blank" rel="noopener" title="Приложение в рамке устройства с ползунком времени. Только для компьютера">Стенд со временем</a>
           <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">GitHub</a>
         </div>
         <div class="hero__stage rv">
           <div class="shot"><img src="screenshots/week-light.webp" alt="Расписание группы на неделю, светлая тема" width="1600" height="1000"></div>
           <div class="phone phone--dark phone--baked"><div class="phone__screen"><img src="screenshots/mobile-day-dark.webp" alt="Режим «День» на телефоне, тёмная тема" width="780" height="1688"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
-          <div class="hero__chip"><span class="live-dot"></span>Идёт · ещё 38 мин<span>4 пара · ауд. 208</span></div>
+          <div class="hero__chip"><span class="live-dot"></span>Идёт · ещё <b id="heroLeft">38</b> мин<span>4 пара · ауд. 208</span></div>
         </div>
       </div>
     </section>
@@ -586,6 +687,7 @@
             <li><span class="ico">✕</span><span><b>Пустота на телефоне.</b> Три карточки «Нет пары» занимают весь экран, а первая настоящая пара — где-то внизу.</span></li>
             <li><span class="ico">✕</span><span><b>Только светлая тема.</b> Вечером в 18:00 по пути с пар — прямо в глаза.</span></li>
             <li><span class="ico">✕</span><span><b>Нет поиска по тексту и подробностей.</b> Группа выбирается через корпус и курс, клик по паре ничего не открывает.</span></li>
+            <li><span class="ico">✕</span><span><b>Не отвечает на «где свободно?».</b> Чтобы найти пустую аудиторию, нужно открывать кабинеты по одному.</span></li>
           </ul>
         </div>
         <div class="before rv">
@@ -613,7 +715,7 @@
         </div>
         <div class="demo rv" id="demo">
           <div class="appview"><div class="dayview" id="appDay"></div></div>
-          <div class="demo__bar"><span class="demo__now">Сейчас <b id="demoClock">14:22</b></span><input type="range" id="scrub" min="780" max="1110" step="1" value="862" aria-label="Время суток в демо, от 13:00 до 18:30"></div>
+          <div class="demo__bar"><button class="demo__play" id="demoPlay" aria-label="Пауза" title="Пауза / ход времени"></button><span class="demo__now">Сейчас <b id="demoClock">14:22</b></span><input type="range" id="scrub" min="780" max="1110" step="1" value="862" aria-label="Время суток в демо, от 13:00 до 18:30"></div>
         </div>
       </div>
     </section>
@@ -656,12 +758,43 @@
             <button class="tab" role="tab" aria-selected="false" data-i="2">Кабинеты</button>
           </div>
           <div class="tab-copy rv" id="kindCopy"></div>
-          <p class="search-note rv"><kbd>/</kbd> <span><b>Один поиск на всё.</b> Группы, преподаватели и кабинеты всех корпусов сразу, <kbd>Enter</kbd> открывает первый результат.</span></p>
+          <p class="search-note rv"><kbd>/</kbd> <span><b>Один гибкий поиск на всё.</b> Знаки не важны: «ис 24 9 2», «ис24/9-2» и «ис-24/9-2» найдут одну группу. <kbd>Enter</kbd> открывает первый результат.</span></p>
         </div>
         <div class="tab-stage rv" id="kindStage">
-          <div class="shot"><img src="screenshots/search-light.webp" alt="Один поиск по группам, преподавателям и кабинетам" width="1600" height="1000" loading="lazy"></div>
+          <div class="shot"><img src="screenshots/search-light.webp" alt="Поиск «ис 24 9 2» находит группу ИС-24/9-2" width="1600" height="1000" loading="lazy"></div>
           <div class="shot" hidden><img src="screenshots/teacher-light.webp" alt="Расписание преподавателя" width="1600" height="1000" loading="lazy"></div>
           <div class="shot" hidden><img src="screenshots/room-dark.webp" alt="Расписание кабинета" width="1600" height="1000" loading="lazy"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5б. Весь корпус -->
+    <section class="slide" id="s-building" data-title="Весь корпус">
+      <div class="slide__inner split split--rev">
+        <div class="bld rv">
+          <div class="tab-stage" id="bldStage">
+            <div class="shot"><img src="screenshots/building-all-dark.webp" alt="Шахматка корпуса: кабинеты и пары, колонка идущей пары подсвечена" width="1600" height="1000" loading="lazy"></div>
+            <div class="shot" hidden><img src="screenshots/building-free-light.webp" alt="Табло свободных кабинетов на выбранную пару" width="1600" height="1000" loading="lazy"></div>
+            <div class="shot" hidden><img src="screenshots/building-find-dark.webp" alt="Поиск «ис 24 9 2» подсвечивает пары группы в шахматке" width="1600" height="1000" loading="lazy"></div>
+          </div>
+          <div class="bld__phones" id="bldPhones">
+            <div class="phone phone--dark phone--baked" data-v="0"><div class="phone__screen"><img src="screenshots/mobile-building-all-dark.webp" alt="Список занятых кабинетов на телефоне, тёмная тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
+            <div class="phone phone--baked is-off" data-v="1"><div class="phone__screen"><img src="screenshots/mobile-building-free-light.webp" alt="Табло свободных кабинетов на телефоне, светлая тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
+          </div>
+        </div>
+        <div>
+          <span class="eyebrow rv">Новое · весь корпус</span>
+          <h2 class="h-lg rv">Где сейчас свободно? <span class="mark">Видно сразу.</span></h2>
+          <div class="tabs rv" role="tablist" id="bldTabs">
+            <button class="tab" role="tab" aria-selected="true" data-i="0">Шахматка</button>
+            <button class="tab" role="tab" aria-selected="false" data-i="1">Свободные</button>
+            <button class="tab" role="tab" aria-selected="false" data-i="2">Поиск</button>
+          </div>
+          <div class="tab-copy rv" id="bldCopy"></div>
+          <ul class="bullets rv">
+            <li><span class="ico">N</span><span><b>«Свободно 4 из 21»</b> — нагрузка корпуса на идущую пару, а между парами на ближайшую</span></li>
+            <li><span class="ico">⇆</span><span><b>Недели и дни</b> — стрелки рядом с полосой дней, а на телефоне свайп: по списку листает пары, по полосе дней — недели</span></li>
+          </ul>
         </div>
       </div>
     </section>
@@ -696,11 +829,13 @@
             <li><span class="ico">⋮</span><span><b>Точки под числом</b> — по одной на каждую пару; ряды делятся по длинному перерыву, пустая точка — свободная пара</span></li>
             <li><span class="ico">▢</span><span><b>Ярлык на экран:</b> добавьте на главный экран или рабочий стол — откроется как приложение</span></li>
             <li><span class="ico">⌐</span><span><b>Безопасные зоны:</b> интерфейс не лезет под статус-бар и жестовую полосу</span></li>
+            <li><span class="ico">▦</span><span><b>Весь корпус в кармане:</b> пары лентой внизу, «Свободные» плитками, свайп листает пары</span></li>
           </ul>
         </div>
         <div class="phones rv">
           <div class="phone phone--baked"><div class="phone__screen"><img src="screenshots/mobile-day-light.webp" alt="День на телефоне, светлая тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
           <div class="phone phone--dark phone--baked"><div class="phone__screen"><img src="screenshots/mobile-modal-dark.webp" alt="Шторка с подробностями пары, тёмная тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
+          <div class="phone phone--dark phone--baked"><div class="phone__screen"><img src="screenshots/mobile-building-free-dark.webp" alt="Свободные кабинеты корпуса на телефоне, тёмная тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
         </div>
       </div>
     </section>
@@ -716,9 +851,10 @@
             <thead><tr><th></th><th>sielom.ru/timetable</th><th>Этот проект</th></tr></thead>
             <tbody>
               <tr><td>Текущая пара</td><td class="n">Нет</td><td class="y">Подсветка, таймер, прогресс</td></tr>
+              <tr><td>Свободные кабинеты</td><td class="n">Нет</td><td class="y">Табло и шахматка всего корпуса</td></tr>
               <tr><td>Тёмная тема</td><td class="n">Нет</td><td class="y">Системная / светлая / тёмная</td></tr>
               <tr><td>Подробности пары</td><td class="n">Клик ничего не делает</td><td class="y">Корпус, адрес, ФИО, группы</td></tr>
-              <tr><td>Поиск</td><td class="n">Выбор через корпус и курс</td><td class="y">Единый поиск по всем корпусам</td></tr>
+              <tr><td>Поиск</td><td class="n">Выбор через корпус и курс</td><td class="y">Единый и гибкий: «ис 24 9 2»</td></tr>
               <tr><td>Горячие клавиши</td><td class="n">Нет</td><td class="y">← → T / D Esc</td></tr>
               <tr><td>Пустые пары на телефоне</td><td class="n">Карточки на весь экран</td><td class="y">Только реальные пары</td></tr>
               <tr><td>День / неделя</td><td class="eq">Есть</td><td class="eq">Есть</td></tr>
@@ -757,6 +893,27 @@
       </div>
     </section>
 
+    <!-- 9б. Стенд -->
+    <section class="slide" id="s-lab" data-title="Стенд">
+      <div class="slide__inner split">
+        <div>
+          <span class="eyebrow rv">Для любопытных</span>
+          <h2 class="h-lg rv">Потрогайте всё <span class="mark">сами</span></h2>
+          <p class="lead rv">Стенд запускает настоящее приложение в рамке устройства и подменяет время. Сдвиньте ползунок на 13:20 — и увидите «пересменку», на 14:22 — идущую пару, на 23:30 — пустой вечер.</p>
+          <ul class="bullets rv">
+            <li><span class="ico">⏱</span><span><b>Ползунок времени и ход часов</b> со скоростью до 20 минут в секунду</span></li>
+            <li><span class="ico">▢</span><span><b>Телефон, планшет, ноутбук</b> — с настоящими безопасными зонами</span></li>
+            <li><span class="ico">⚠</span><span><b>Любые сценарии:</b> загрузка, ошибка сети, «не опубликовано», «пар нет» и замена у пары</span></li>
+          </ul>
+          <div class="hero__cta rv" style="justify-content:flex-start;margin-top:26px">
+            <a class="pill-btn pill-btn--accent" href="../demo.html" target="_blank" rel="noopener">Открыть стенд →</a>
+            <span class="lab__note">Только для компьютера</span>
+          </div>
+        </div>
+        <a class="rv shot lab__shot" href="../demo.html" target="_blank" rel="noopener" aria-label="Открыть стенд"><img src="screenshots/stand.webp" alt="Стенд: приложение в рамке ноутбука, ползунок времени и сценарии данных" width="1600" height="1000" loading="lazy"></a>
+      </div>
+    </section>
+
     <!-- 10. Под капотом -->
     <section class="slide" id="s-tech" data-title="Под капотом">
       <div class="slide__inner">
@@ -764,7 +921,7 @@
         <h2 class="h-lg rv">Без фреймворков. Без сборки.</h2>
         <p class="lead rv" style="max-width:60ch">Чистые HTML, CSS и JavaScript. Своего сервера нет вообще: сайт — статика на GitHub Pages, а браузер ходит в официальный API напрямую (он отдаёт CORS-заголовки).</p>
         <div class="arch rv">
-          <div class="node"><h3>GitHub Pages</h3><code>index.html · app.js</code><code>styles.css · fonts.css</code><code>шрифты, иконки</code></div>
+          <div class="node"><h3>GitHub Pages</h3><code>index.html · app.js</code><code>styles.css · fonts.css</code><code>demo.html · шрифты, иконки</code></div>
           <div class="arrow">→</div>
           <div class="node node--accent"><h3>Браузер</h3><code>fetch напрямую,</code><code>без прокси</code></div>
           <div class="arrow">→</div>
@@ -773,7 +930,7 @@
         <div class="stats rv">
           <div class="stat"><b>0</b><span>npm-зависимостей</span></div>
           <div class="stat"><b>4</b><span>файла фронтенда</span></div>
-          <div class="stat"><b>~135 КБ</b><span>исходников целиком</span></div>
+          <div class="stat"><b>~190 КБ</b><span>исходников целиком</span></div>
           <div class="stat"><b>0</b><span>серверного кода</span></div>
         </div>
       </div>
@@ -819,9 +976,10 @@
         <div class="qr rv" id="qr" role="img" aria-label="QR-код со ссылкой на расписание"></div>
         <div class="hero__cta rv">
           <a class="pill-btn pill-btn--accent" href="https://nikkishura.github.io/my-sielom-web/" target="_blank" rel="noopener">Открыть расписание →</a>
+          <a class="pill-btn" href="../demo.html" target="_blank" rel="noopener" title="Рамка устройства, ползунок времени и сценарии данных. Только для компьютера">Стенд (ПК)</a>
           <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">Исходный код</a>
         </div>
-        <div class="roadmap rv"><span>Скоро: уведомления о начале пары</span><span>Экспорт в календарь</span><span>Офлайн-режим</span></div>
+        <div class="roadmap rv" aria-label="Планы"><span class="roadmap__label">Скоро · этого пока нет в приложении</span><span class="soon">Уведомления о начале пары</span><span class="soon">Экспорт в календарь</span><span class="soon">Офлайн-режим</span></div>
         <p class="foot">Неофициальный проект: сделан для <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a>, но не от имени института. Данные — с sielom.ru.</p>
       </div>
     </section>
@@ -834,6 +992,15 @@
     const $$ = (s, r = document) => [...r.querySelectorAll(s)];
     const slides = $$(".slide");
     const pad = (n) => String(n).padStart(2, "0");
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // плавная замена текста: старый уходит вниз и тает, новый возвращается
+    const swapHTML = (el, html, text = false) => {
+      const apply = () => { text ? (el.textContent = html) : (el.innerHTML = html); };
+      if (reduceMotion || !el.firstChild) { apply(); return; }
+      clearTimeout(el._swap);
+      el.classList.add("is-swap");
+      el._swap = setTimeout(() => { apply(); el.classList.remove("is-swap"); }, 170);
+    };
 
     // ---------- Навигация ----------
     const dots = $("#dots");
@@ -952,24 +1119,200 @@
     const KIND_COPY = [
       ["Группы", "Навигация «корпус → курс → группа» с хлебными крошками. Префикс группы вынесен в значок («ЮСО» и «25/11»), так список читается быстрее."],
       ["Преподаватели", "Все пары преподавателя за неделю: аудитории, группы и подгруппы. В официальной версии до преподавателя нельзя дойти из карточки пары — здесь это один клик."],
-      ["Кабинеты", "Занятость любой аудитории по корпусам: кто, когда и с какой группой. Удобно, чтобы найти свободный кабинет или понять, куда переехала пара."],
+      ["Кабинеты", "Занятость любой аудитории: кто, когда и с какой группой. А чтобы увидеть сразу весь корпус и найти свободную аудиторию, откройте «Весь корпус» — на следующем слайде."],
     ];
     const showKind = (i) => {
       $$("#kindTabs .tab").forEach((t, j) => t.setAttribute("aria-selected", j === i));
       $$("#kindStage .shot").forEach((s, j) => (s.hidden = j !== i));
-      $("#kindCopy").innerHTML = `<b>${KIND_COPY[i][0]}</b>${KIND_COPY[i][1]}`;
+      swapHTML($("#kindCopy"), `<b>${KIND_COPY[i][0]}</b>${KIND_COPY[i][1]}`);
     };
     $$("#kindTabs .tab").forEach((t) => t.addEventListener("click", () => showKind(+t.dataset.i)));
+
+    // ---------- Табы корпуса ----------
+    const BLD_COPY = [
+      ["Шахматка", "Все кабинеты корпуса × все пары дня на одном экране. Колонка идущей пары подсвечена целиком, прогресс бежит по её заголовку, а прошедшие пары приглушены. Преподаватель с фото, группы значками, строки сетки подстраиваются под самую высокую ячейку."],
+      ["Свободные", "Табло: выберите пару — и сразу видно, какие кабинеты свободны и до какого времени, а у занятых — кто и с кем. Сводка «Свободно N из M» считается для идущей пары, а между парами для ближайшей."],
+      ["Поиск", "Введите группу или преподавателя — и подсветятся все их пары в корпусе. Пишите как удобно: «ис 24 9 2», «ис24/9-2» и «ис-24/9-2» найдут одно и то же. Этажи и «только свободные» — фильтрами рядом."],
+    ];
+    const showBld = (i) => {
+      $$("#bldTabs .tab").forEach((t, j) => t.setAttribute("aria-selected", j === i));
+      $$("#bldStage .shot").forEach((s, j) => (s.hidden = j !== i));
+      $$("#bldPhones .phone").forEach((p) => p.classList.toggle("is-off", +p.dataset.v !== i));
+      swapHTML($("#bldCopy"), `<b>${BLD_COPY[i][0]}</b>${BLD_COPY[i][1]}`);
+    };
+    $$("#bldTabs .tab").forEach((t) => t.addEventListener("click", () => showBld(+t.dataset.i)));
+    showBld(0);
 
     // ---------- Подробности: обычная пара / замена ----------
     const DETAIL_CAPTION = ["Так выглядят подробности обычной пары.", "Если колледж указал замену, над данными появляется плашка с текстом, а кабинет подсвечивается. Примечание видно и на карточке — значком."];
     const showDetail = (v) => {
       $$("#detailShot .tab").forEach((t) => t.setAttribute("aria-selected", +t.dataset.v === v));
-      $$("#detailShot .shot, #detailShot .phone").forEach((e) => (e.hidden = +e.dataset.v !== v));
-      $("#detailCaption").textContent = DETAIL_CAPTION[v];
+      $$("#detailShot .shot, #detailShot .phone").forEach((e) => {
+        const show = +e.dataset.v === v, was = !e.hidden;
+        e.hidden = !show;
+        if (show && !was) { e.classList.remove("swap-in"); void e.offsetWidth; e.classList.add("swap-in"); }
+      });
+      swapHTML($("#detailCaption"), DETAIL_CAPTION[v], true);
     };
     $$("#detailShot .tab").forEach((t) => t.addEventListener("click", () => showDetail(+t.dataset.v)));
     showKind(0);
+
+    // ---------- Ползунок под активной вкладкой ----------
+    $$(".tabs").forEach((tabs) => {
+      const thumb = document.createElement("i");
+      thumb.className = "tabs__thumb"; thumb.setAttribute("aria-hidden", "true");
+      tabs.prepend(thumb);
+      const sync = () => {
+        const a = $('.tab[aria-selected="true"]', tabs);
+        if (!a || !a.offsetWidth) return;
+        thumb.style.width = `${a.offsetWidth}px`;
+        thumb.style.transform = `translateX(${a.offsetLeft}px)`;
+        requestAnimationFrame(() => thumb.classList.add("is-ready"));
+      };
+      new MutationObserver(sync).observe(tabs, { subtree: true, attributes: true, attributeFilter: ["aria-selected"] });
+      new ResizeObserver(sync).observe(tabs);
+      sync();
+      document.fonts?.ready.then(sync);
+    });
+
+    // ---------- Движение ----------
+    const motion = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const active = (id) => slides[current].id === id && !document.hidden;
+    $$(".bullets").forEach((ul) => $$("li", ul).forEach((li, i) => li.style.setProperty("--i", i)));
+
+    if (motion) {
+      // заголовки по словам: слова выезжают из-под маски по очереди
+      $$(".h-xl, .h-lg").forEach((h) => {
+        const label = h.innerHTML.replace(/<br\s*\/?>/g, " ").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+        let n = 0;
+        const walk = (node) => {
+          [...node.childNodes].forEach((c) => {
+            if (c.nodeType === 3) {
+              const frag = document.createDocumentFragment();
+              c.textContent.split(/(\s+)/).forEach((part) => {
+                if (!part) return;
+                if (/^\s+$/.test(part)) { frag.append(part); return; }
+                const w = document.createElement("span"); w.className = "w"; w.setAttribute("aria-hidden", "true");
+                const i = document.createElement("i"); i.style.setProperty("--wi", n++); i.textContent = part;
+                w.append(i); frag.append(w);
+              });
+              c.replaceWith(frag);
+            } else if (c.nodeType === 1 && c.tagName !== "BR") walk(c);
+          });
+        };
+        walk(h);
+        h.setAttribute("aria-label", label);
+      });
+
+      // обложка: «ещё N мин» тикает, прожектор и параллакс следуют за курсором
+      const left = $("#heroLeft");
+      let leftN = 38;
+      setInterval(() => {
+        if (!active("s-hero")) return;
+        leftN = leftN <= 31 ? 38 : leftN - 1;
+        left.textContent = leftN;
+        left.classList.remove("tick"); void left.offsetWidth; left.classList.add("tick");
+      }, 2200);
+      if (canHover) {
+        const hero = $("#s-hero"), stage = $(".hero__stage", hero);
+        hero.addEventListener("pointermove", (e) => {
+          const r = hero.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+          hero.style.setProperty("--sx", `${x * 100}%`); hero.style.setProperty("--sy", `${y * 100}%`);
+          stage.style.setProperty("--mx", (x - 0.5).toFixed(3)); stage.style.setProperty("--my", (y - 0.5).toFixed(3));
+        });
+        hero.addEventListener("pointerleave", () => { stage.style.setProperty("--mx", 0); stage.style.setProperty("--my", 0); });
+        // лёгкий наклон скриншотов в духе «карточки в руке»
+        $$("#bldStage, .lab__shot").forEach((el) => {
+          el.dataset.tilt = "";
+          el.addEventListener("pointermove", (e) => {
+            const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+            el.style.transform = `perspective(1400px) rotateY(${(x * 5).toFixed(2)}deg) rotateX(${(-y * 4).toFixed(2)}deg)`;
+          });
+          el.addEventListener("pointerleave", () => { el.style.transform = ""; });
+        });
+      }
+
+      // ход времени в демо живой пары: едет сам, пока не взяли ползунок
+      const play = $("#demoPlay");
+      let playing = true;
+      const ICON_PAUSE = '<svg viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.6" height="12" rx="1.2"/><rect x="8.4" y="1" width="3.6" height="12" rx="1.2"/></svg>';
+      const ICON_PLAY = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 1.6v10.8c0 .8.9 1.3 1.6.8l8-5.4c.6-.4.6-1.2 0-1.6l-8-5.4c-.7-.5-1.6 0-1.6.8z"/></svg>';
+      const setPlay = (v) => { playing = v; play.innerHTML = v ? ICON_PAUSE : ICON_PLAY; play.title = v ? "Пауза" : "Запустить ход времени"; play.setAttribute("aria-label", play.title); play.setAttribute("aria-pressed", String(!v)); };
+      setPlay(true);
+      play.addEventListener("click", () => setPlay(!playing));
+      scrub.addEventListener("pointerdown", () => setPlay(false));
+      scrub.addEventListener("keydown", () => setPlay(false));
+      setInterval(() => {
+        if (!playing || !active("s-live")) return;
+        const next = +scrub.value + 1;
+        scrub.value = next > +scrub.max ? scrub.min : next;
+        renderDemo(+scrub.value);
+      }, 110);
+
+      // светлая/тёмная тема: один показательный проход ползунка
+      let swept = false;
+      setInterval(() => {
+        if (swept || !active("s-week")) return;
+        swept = true;
+        const input = $("input", cmp), t0 = performance.now(), D = 3200;
+        const path = (k) => k < 0.33 ? 50 - 35 * (k / 0.33) : k < 0.66 ? 15 + 70 * ((k - 0.33) / 0.33) : 85 - 35 * ((k - 0.66) / 0.34);
+        const frame = (t) => {
+          const k = Math.min(1, (t - t0) / D);
+          const v = path(k) * 1;
+          input.value = v; cmp.style.setProperty("--pos", `${v}%`);
+          if (k < 1 && !input.matches(":active")) requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+      }, 300);
+
+      // вкладки меняются сами, пока их не тронули
+      const autoTabs = (slideId, tabsSel, count, show, ms) => {
+        const tabs = $(tabsSel); if (!tabs) return;
+        const bar = document.createElement("div"); bar.className = "tabs__auto"; bar.innerHTML = "<i></i>";
+        tabs.after(bar);
+        let i = 0, t = 0, touched = false;
+        const sync = () => { i = Math.max(0, $$(".tab", tabs).findIndex((b) => b.getAttribute("aria-selected") === "true")); };
+        tabs.addEventListener("pointerdown", () => { touched = true; bar.classList.add("is-off"); });
+        setInterval(() => {
+          if (touched || !active(slideId)) { t = 0; bar.firstChild.style.setProperty("--p", "0%"); return; }
+          t += 100;
+          if (t >= ms) { t = 0; sync(); show((i + 1) % count); }
+          bar.firstChild.style.setProperty("--p", `${(t / ms) * 100}%`);
+        }, 100);
+      };
+      autoTabs("s-kinds", "#kindTabs", 3, showKind, 5200);
+      autoTabs("s-building", "#bldTabs", 3, showBld, 6500);
+
+      // горячие клавиши «нажимаются» сами, пока не нажали настоящие
+      let keyDemo = true, keyI = 0;
+      addEventListener("keydown", () => { if (active("s-keys")) keyDemo = false; });
+      setInterval(() => {
+        if (!keyDemo || !active("s-keys")) return;
+        const rows = $$(".key-row"), row = rows[keyI++ % rows.length];
+        row.classList.add("is-hit"); setTimeout(() => row.classList.remove("is-hit"), 600);
+      }, 1100);
+
+      // цифры на «Под капотом» набегают
+      const counted = new WeakSet();
+      setInterval(() => {
+        if (!active("s-tech")) return;
+        $$(".stat b").forEach((b) => {
+          if (counted.has(b)) return; counted.add(b);
+          const m = /^(\D*)(\d+)(.*)$/.exec(b.textContent);
+          if (!m || +m[2] === 0) return;
+          const [, pre, num, post] = m, t0 = performance.now(), D = 1100;
+          const frame = (t) => {
+            const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3);
+            b.textContent = `${pre}${Math.round(+num * e)}${post}`;
+            if (k < 1) requestAnimationFrame(frame);
+          };
+          requestAnimationFrame(frame);
+        });
+      }, 250);
+    } else {
+      $("#demoPlay")?.remove();
+    }
 
     // ---------- QR ----------
     try {

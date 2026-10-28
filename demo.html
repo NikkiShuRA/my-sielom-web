@@ -55,16 +55,28 @@
     .phone iframe { border-radius: 36px; }
     .tablet iframe { border-radius: 16px; }
     .meta { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 12px; color: var(--muted); pointer-events: none; }
-    @media (max-width: 860px) {
-      body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
-      .panel { height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
-      .stage { height: 80vh; }
+    .pc-only { display: none; }
+    /* стенд рассчитан на компьютер: на телефоне и узком окне показываем пояснение */
+    @media (max-width: 900px), (pointer: coarse) {
+      body { display: block; }
+      .panel, .stage { display: none; }
+      .pc-only { min-height: 100%; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 32px 24px; text-align: center; }
+      .pc-only img { width: 64px; height: 64px; border-radius: 16px; }
+      .pc-only h1 { margin: 0; font: 800 22px/1.2 var(--font); }
+      .pc-only p { margin: 0; max-width: 340px; color: var(--muted); }
+      .pc-only a { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 700; text-decoration: none; }
     }
   </style>
 </head>
 <body>
+  <div class="pc-only">
+    <img src="assets/icon.svg" alt="">
+    <h1>Стенд только для компьютера</h1>
+    <p>Здесь приложение запускается в рамке с ползунком времени и сценариями данных. Откройте эту страницу на компьютере, а на телефоне пользуйтесь самим приложением.</p>
+    <a href="./">Открыть расписание</a>
+  </div>
   <aside class="panel">
-    <div class="brand"><img src="assets/icon.svg" alt=""><div>Стенд<small>Мой Сиелом · проверка состояний</small></div></div>
+    <div class="brand"><img src="assets/icon.svg" alt=""><div>Стенд<small>Мой Сиелом · только для ПК</small></div></div>
 
     <section class="sec">
       <h3>Время</h3>
@@ -131,10 +143,22 @@
   const S = window.__demo = {
     day: (real.getDay() + 6) % 7, min: real.getHours() * 60 + real.getMinutes(),
     mode: "ok", note: false, theme: "system", view: matchMedia("(max-width: 700px)").matches ? "day" : "week",
-    subject: "group", device: matchMedia("(max-width: 860px)").matches ? "phone" : "laptop", speed: 5, playing: false,
+    subject: "group", device: "laptop", speed: 5, playing: false,
     get now() { const d = new Date(monday); d.setDate(d.getDate() + this.day); d.setHours(0, this.min, 0, 0); return d.getTime(); },
   };
   if (S.day > 5) S.day = 5;
+  // параметры адреса, чтобы делиться готовым состоянием: ?t=14:22&d=3&subject=building&theme=dark&view=week&device=wide&mode=ok
+  {
+    const sp = new URLSearchParams(location.search), pick = (k, list) => (list.includes(sp.get(k)) ? sp.get(k) : null);
+    const m = /^(\d{1,2}):(\d{2})$/.exec(sp.get("t") || "");
+    if (m) S.min = Math.min(1439, Number(m[1]) * 60 + Number(m[2]));
+    if (/^[0-5]$/.test(sp.get("d") || "")) S.day = Number(sp.get("d"));
+    S.subject = pick("subject", ["group", "building"]) || S.subject;
+    S.theme = pick("theme", ["system", "light", "dark"]) || S.theme;
+    S.view = pick("view", ["week", "day"]) || S.view;
+    S.device = pick("device", ["phone", "tablet", "laptop", "wide"]) || S.device;
+    S.mode = pick("mode", ["ok", "loading", "error", "unpublished", "empty"]) || S.mode;
+  }
 
   const frame = $("#frame");
   const doc = () => frame.contentDocument;

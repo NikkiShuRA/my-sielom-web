@@ -27,7 +27,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site/about
-          cp -r index.html app.js styles.css fonts.css favicon.ico manifest.webmanifest assets _site/
+          cp -r index.html demo.html app.js styles.css fonts.css favicon.ico manifest.webmanifest assets _site/
           cp -r docs/. _site/about/
           # Версия в адресах стилей и скрипта: браузер не покажет новую разметку со старыми файлами из кеша
           V="${GITHUB_SHA::7}"
