@@ -10,7 +10,7 @@
   const WEEKDAYS_FULL = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
   const MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
   const MONTHS_SHORT = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
-  const KIND_LABEL = { group: "Группа", teacher: "Преподаватель", room: "Кабинет" };
+  const KIND_LABEL = { group: "Группа", teacher: "Преподаватель", room: "Кабинет", building: "Корпус · все кабинеты" };
   // Между парами показываем длинный перерыв (от 25 мин) разделителем «Перерыв N мин». Он берётся из самих данных,
   // поэтому не зависит от того, как называть смены и каким бывает график звонков в корпусе
   const LONG_BREAK = 25;
@@ -32,6 +32,9 @@
     check: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     calendar: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M2 6.5h12M5.5 1.75v2.5M10.5 1.75v2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
     clock: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.4"/><path d="M8 4.75V8l2.25 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+    grid: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg>',
+    door: '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 14V3.5c0-.55.45-1 1-1h5.5c.55 0 1 .45 1 1V14M1.5 14h13M10.5 5.5H12c.55 0 1 .45 1 1V14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8.5" r=".9" fill="currentColor"/></svg>',
+    search: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.75" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
     calClock: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="16" cy="16" r="3.6" fill="var(--c-bg)" stroke="currentColor" stroke-width="1.5"/><path d="M16 14.5V16l1 .8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
     wifiOff: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 9.5a13 13 0 0 1 18 0M6 13a8.5 8.5 0 0 1 12 0M9.2 16.4a4 4 0 0 1 5.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
     coffee: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9zM16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2M12 3.5v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -73,8 +76,11 @@
     error: null,
     loadingWeek: true,
     divisionLoaded: false,
+    // «Весь корпус»: вид (все кабинеты / свободные), выбранная пара и фильтры шахматки
+    building: { view: store.get("sielom.buildingView", "all") === "free" ? "free" : "all", pair: null, find: "", floor: "all", onlyFree: false },
   };
-  state.tab = state.selected.kind;
+  state.tab = state.selected.kind === "building" ? "room" : state.selected.kind;
+  const isBuilding = () => state.selected.kind === "building";
   state.divisionId = state.selected.divisionId || null;
 
   // ---------- Даты и время ----------
@@ -126,6 +132,8 @@
   const loadLessonsFor = (sel, week, divName) => {
     if (sel.kind === "group")   return apiFetch(`${API}/lessons/group/${q(sel.id)}?week_id=${week.id}`);
     if (sel.kind === "teacher") return apiFetch(`${API}/lessons/teacher?teacherName=${q(sel.id)}&week_id=${week.id}`);
+    // весь корпус — тот же запрос, что и для списка кабинетов, без фильтра (apiFetch отдаст его из кэша)
+    if (sel.kind === "building") return apiFetch(`${API}/lessons/division?divisionName=${q(divName)}&week_id=${week.id}`);
     return apiFetch(`${API}/lessons/division?divisionName=${q(divName)}&week_id=${week.id}`)
       .then((all) => all.filter((l) => l.cabinet && l.cabinet.id_1c === sel.id));
   };
@@ -242,9 +250,9 @@
 
     const map = new Map();
     for (const l of state.divisionLessons) if (l.cabinet && !map.has(l.cabinet.id_1c)) map.set(l.cabinet.id_1c, l.cabinet);
-    return [...map.values()]
+    const rooms = [...map.values()]
       .sort((a, b) => naturalSort(a.number || a.name, b.number || b.name))
-      .filter((c) => !/^дистант$/i.test(c.number || c.name))
+      .filter((c) => !isRemote(c))
       .map((c) => {
         const num = c.number || c.name || "—";
         const stripped = num.replace(/^[А-Яа-яA-Za-z]+-/, "");
@@ -253,6 +261,27 @@
         const hint = ext ? ext.address : c.number ? (c.number !== stripped ? c.number : "") : c.name;
         return { type: "room", id: c.id_1c, title: stripped, hint };
       });
+    if (!rooms.length) return rooms;
+    // первым пунктом — общий вид всех кабинетов корпуса
+    const d = divisionById(state.divisionId);
+    const free = freeRoomsNow(state.divisionLessons, rooms.map((r) => r.id));
+    const hint = `${rooms.length} ${plural(rooms.length, ["кабинет", "кабинета", "кабинетов"])}${free !== null ? ` · свободно сейчас ${free}` : ""}`;
+    return [{ type: "building", id: state.divisionId, title: divisionDisplayLabel(d), name: "Весь корпус", hint }, ...rooms];
+  }
+
+  const isRemote = (c) => /^дистант$/i.test(c.number || c.name || "");
+
+  // Сколько из кабинетов свободно прямо сейчас; null — если сейчас в корпусе не идёт ни одна пара
+  function freeRoomsNow(lessons, roomIds) {
+    const now = new Date(), today = isoDate(now);
+    const busy = new Set();
+    let anyNow = false;
+    for (const l of lessons) {
+      if (l.date !== today || timing(l, now, now)?.kind !== "now") continue;
+      anyNow = true;
+      if (l.cabinet) busy.add(l.cabinet.id_1c);
+    }
+    return anyNow ? roomIds.filter((id) => !busy.has(id)).length : null;
   }
 
   function selectedTitle() {
@@ -293,6 +322,9 @@
     } else if (e.type === "course") {
       lead = `<span class="entity__badge">${esc(e.num)}</span>`;
       text = `<span class="entity__title">${esc(e.title)}</span><span class="entity__hint">${esc(e.hint)}</span>`;
+    } else if (e.type === "building") {
+      lead = `<span class="entity__badge">${ICON.grid}</span>`;
+      text = `<span class="entity__title">${esc(e.name)}</span><span class="entity__hint">${esc(e.hint)}</span>`;
     } else if (e.type === "room") {
       lead = `<span class="entity__badge">${esc(e.title)}</span>`;
       text = `<span class="entity__title">Кабинет ${esc(e.title)}</span><span class="entity__hint">${esc(e.hint)}</span>`;
@@ -308,7 +340,7 @@
   }
 
   function buildFavItems() {
-    const byType = { teacher: [], group: [], room: [] };
+    const byType = { teacher: [], group: [], room: [], building: [] };
     for (const key of state.favourites) {
       const colon = key.indexOf(":");
       const type  = key.slice(0, colon);
@@ -327,6 +359,9 @@
         const stripped = num.replace(/^[А-Яа-яA-Za-z]+-/, "");
         const div = cab ? divisionById(cab.divisionId) : null;
         byType.room.push({ type: "room", id, title: stripped, hint: div ? divisionDisplayLabel(div) : "", divisionId: cab?.divisionId || null });
+      } else if (type === "building") {
+        const div = divisionById(id);
+        if (div) byType.building.push({ type: "building", id, title: divisionDisplayLabel(div), name: divisionDisplayLabel(div), hint: "Все кабинеты", divisionId: id });
       }
     }
     Object.values(byType).forEach((arr) => arr.sort((a, b) => naturalSort(a.title, b.title)));
@@ -372,31 +407,40 @@
 
   function searchResults(needle) {
     const tokens = normText(needle).split(/\s+/).filter(Boolean);
+    // знаки препинания не важны: «ис 24 9 2», «ис24/9-2» и «ис-24/9-2» — один запрос
+    const squash = (s) => normText(s).replace(/[^a-zа-я0-9]+/g, "");
+    const whole = squash(needle);
     // по названию ищем любой фрагмент, по подсказке (корпус, адрес) — только от 3 символов, чтобы «1» не цеплял адреса
-    const hit = (title, hint = "") => {
-      const a = normText(title), b = normText(hint);
-      return tokens.every((t) => a.includes(t) || (t.length >= 3 && b.includes(t)));
+    const test = (title, hint = "") => {
+      const a = normText(title), b = normText(hint), sa = squash(title);
+      return { w: !!whole && sa.includes(whole), t: tokens.every((t) => a.includes(t) || sa.includes(squash(t)) || (t.length >= 3 && b.includes(t))) };
     };
-    const rank = (title) => (normText(title).startsWith(tokens[0]) ? 0 : 1);
+    // точное совпадение (без учёта знаков) важнее; если его нет совсем, берём совпадение по словам
+    const pick = (items, fields) => {
+      const r = items.map((e) => [e, test(...fields(e))]);
+      const exact = r.filter(([, x]) => x.w);
+      return (exact.length ? exact : r.filter(([, x]) => x.t)).map(([e]) => e);
+    };
+    const rank = (title) => (squash(title).startsWith(squash(tokens[0])) ? 0 : 1);
     const sortHits = (arr) => arr.sort((a, b) => rank(a.title) - rank(b.title) || naturalSort(a.title, b.title));
 
-    const groups = sortHits(state.groups.map((g) => {
+    const groups = sortHits(pick(state.groups.map((g) => {
       const div = divisionById(g.divisionId);
       return { type: "group", id: g.id_1c, title: g.name, hint: [div ? divisionDisplayLabel(div) : "", g.course ? `${g.course} курс` : ""].filter(Boolean).join(" · "), divisionId: g.divisionId, course: g.course };
-    }).filter((e) => hit(e.title, e.hint)));
+    }), (e) => [e.title, e.hint]));
 
     const idx = state.searchIndex;
-    const teachers = idx ? sortHits(idx.teachers.map((t) => ({ type: "teacher", id: t.name, title: t.name, parts: t.name.split(/\s+/), divisionId: t.divisionId }))
-      .filter((e) => hit(e.title))) : [];
-    const rooms = idx ? sortHits(idx.rooms
-      .filter((c) => !/^дистант$/i.test(c.number || c.name))
+    const teachers = idx ? sortHits(pick(idx.teachers.map((t) => ({ type: "teacher", id: t.name, title: t.name, parts: t.name.split(/\s+/), divisionId: t.divisionId })),
+      (e) => [e.title])) : [];
+    const rooms = idx ? sortHits(pick(idx.rooms
+      .filter((c) => !isRemote(c))
       .map((c) => {
         const num = c.number || c.name || "—";
         const addr = externalPlace(num)?.address || divisionAddrPart(divisionById(c.divisionId));
         // в общем поиске корпусов много, поэтому адрес в подсказке остаётся
         return { type: "room", id: c.id_1c, title: num.replace(/^[А-Яа-яA-Za-z]+-/, ""), hint: c.number ? `${c.number}${addr ? " · " + addr : ""}` : c.name, divisionId: c.divisionId, full: num };
       })
-      .filter((e) => hit(`${e.title} ${e.full}`, e.hint))) : [];
+      , (e) => [`${e.title} ${e.full}`, e.hint])) : [];
     return { groups, teachers, rooms, ready: !!idx };
   }
 
@@ -429,9 +473,9 @@
         return;
       }
       const byType = buildFavItems();
-      const SEP_LABEL = { teacher: "Преподаватели", group: "Группы", room: "Кабинеты" };
+      const SEP_LABEL = { teacher: "Преподаватели", group: "Группы", room: "Кабинеты", building: "Корпуса" };
       let html = "";
-      for (const type of ["teacher", "group", "room"]) {
+      for (const type of ["teacher", "group", "room", "building"]) {
         let items = byType[type];
         if (needle) items = items.filter((e) => `${e.title} ${e.hint || ""}`.toLowerCase().includes(needle));
         if (!items.length) continue;
@@ -745,6 +789,270 @@
     </div>`;
   }
 
+  // ---------- Весь корпус ----------
+  // Номер кабинета без буквенного префикса корпуса («Р-213» → «213»)
+  const roomShort = (c) => String(c.number || c.name || "—").replace(/^[А-Яа-яA-Za-z]+-/, "");
+  // Этаж — первая цифра трёхзначного номера («МК-409» → 4, «003» → цоколь); «Спортзал», «З-7/1» и т. п. — в «Другие»
+  function roomFloor(c) {
+    const m = String(c.number || c.name || "").replace(/^[А-Яа-яA-Za-z]+-?/, "").match(/^(\d)\d\d/);
+    return m ? m[1] : "x";
+  }
+  const FLOOR_LABEL = (f) => f === "0" ? "Цокольный этаж" : f === "x" ? "Другие помещения" : `${f} этаж`;
+  const FLOOR_SHORT = (f) => f === "0" ? "Цок." : f === "x" ? "Др." : `${f} эт.`;
+  const surname = (t) => (t?.abb_name || t?.name || "").split(/\s+/)[0];
+  const narrowMQ = matchMedia("(max-width: 720px)");
+
+  // Звонки дня: у каждой пары берём самое частое время (в разные дни пары бывают по 60 и по 80 минут)
+  function dayBells(iso) {
+    const byNum = new Map();
+    for (const l of state.lessons) {
+      if (l.date !== iso) continue;
+      if (!byNum.has(l.lessonNumber)) byNum.set(l.lessonNumber, new Map());
+      const counts = byNum.get(l.lessonNumber), t = `${l.timeStart}-${l.timeEnd}`;
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+    return [...byNum].sort((a, b) => a[0] - b[0]).map(([num, counts]) => {
+      const [timeStart, timeEnd] = [...counts].sort((a, b) => b[1] - a[1])[0][0].split("-");
+      return { num, timeStart, timeEnd };
+    });
+  }
+
+  // Кабинеты корпуса за всю неделю (чтобы и пустой сегодня кабинет был в сетке), разложенные по этажам
+  function buildingRooms() {
+    const map = new Map();
+    for (const l of state.lessons) if (l.cabinet && !isRemote(l.cabinet) && !map.has(l.cabinet.id_1c)) map.set(l.cabinet.id_1c, l.cabinet);
+    const floors = new Map();
+    for (const c of [...map.values()].sort((a, b) => naturalSort(roomShort(a), roomShort(b)))) {
+      const f = roomFloor(c);
+      if (!floors.has(f)) floors.set(f, []);
+      floors.get(f).push(c);
+    }
+    return [...floors].sort((a, b) => (a[0] === "x") - (b[0] === "x") || a[0].localeCompare(b[0]));
+  }
+
+  function buildingDay(date, now) {
+    const iso = isoDate(date);
+    const slots = new Map(); // «кабинет|пара» → пары (подгруппы и потоки в одном кабинете)
+    for (const l of state.lessons) {
+      if (l.date !== iso || !l.cabinet) continue;
+      const k = `${l.cabinet.id_1c}|${l.lessonNumber}`;
+      if (!slots.has(k)) slots.set(k, []);
+      slots.get(k).push(l);
+    }
+    const bells = dayBells(iso);
+    const floors = buildingRooms();
+    const rooms = floors.flatMap(([, list]) => list);
+    const nowBell = bells.find((b) => timing(b, date, now)?.kind === "now") || null;
+    // выбранная пара для «Свободных» и телефона: явно выбранная → идущая → ближайшая сегодня → первая
+    const pick = bells.find((b) => b.num === state.building.pair) || nowBell
+      || (isoDate(date) === isoDate(now) && bells.find((b) => timing(b, date, now)?.kind === "soon")) || bells[0] || null;
+    const at = (c, num) => slots.get(`${c.id_1c}|${num}`);
+    // до какого времени кабинет свободен после указанного момента
+    const freeUntil = (c, fromMin) => {
+      const next = state.lessons
+        .filter((l) => l.date === iso && l.cabinet?.id_1c === c.id_1c && toMin(l.timeStart) >= fromMin)
+        .sort((a, b) => a.timeStart.localeCompare(b.timeStart))[0];
+      return next ? next.timeStart : null;
+    };
+    return { iso, slots, bells, floors, rooms, nowBell, pick, at, freeUntil };
+  }
+
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))];
+  const findText = (lessons) => normText(lessons.map((l) => [l.group?.name, l.teacher?.name, l.subject?.name].join(" ")).join(" "));
+
+  function bcellHTML(lessons, date, now) {
+    const l0 = lessons[0];
+    const t = timing(l0, date, now);
+    const subjects = uniq(lessons.map((l) => l.subject?.name));
+    const groups = uniq(lessons.map((l) => l.group?.name));
+    const note = lessons.some((l) => l.note);
+    const cls = ["bcell", t?.kind === "now" && "is-now", t?.kind === "past" && "is-past", note && "has-note"].filter(Boolean).join(" ");
+    const label = `${l0.lessonNumber}-я пара, кабинет ${roomShort(l0.cabinet)}: ${subjects.join(", ")}, ${groups.join(", ")}. Подробнее`;
+    return `<article class="${cls}" data-detail="${esc(lessons.map((l) => l.id).join(","))}" data-find="${esc(findText(lessons))}" tabindex="0" role="button"
+        aria-label="${esc(label)}" title="${esc(`${subjects.join(" / ")}\n${groups.join(", ")}\n${uniq(lessons.map((l) => l.teacher?.name)).join(", ")}`)}"
+        ${t?.kind === "now" ? `style="--progress:${t.progress}%"` : ""}>
+      <span class="bcell__subj">${esc(subjects[0] || "Без названия")}${subjects.length > 1 ? ` <span class="bcell__more">+${subjects.length - 1}</span>` : ""}</span>
+      <span class="bcell__meta">${btileWho(lessons)}${btileGroups(groups)}</span>
+      ${note ? `<span class="lesson__note" title="Есть примечание">${ICON.alert}</span>` : ""}
+    </article>`;
+  }
+
+  function buildingGridHTML(date, now, B) {
+    let html = `<div class="bhead bhead--corner"><span class="bhead__in">Кабинет</span></div>`;
+    for (const b of B.bells) {
+      const t = timing(b, date, now);
+      html += `<div class="bhead${t?.kind === "now" ? " is-now" : t?.kind === "past" ? " is-past" : ""}"><span class="bhead__in">
+        <b>${b.num} пара${t?.kind === "now" ? ' <span class="chip chip--live chip--xs">идёт</span>' : ""}</b>
+        <span>${esc(b.timeStart)} – ${esc(b.timeEnd)}</span></span></div>`;
+    }
+    for (const [floor, rooms] of B.floors) {
+      const freeNow = B.nowBell ? rooms.filter((c) => !B.at(c, B.nowBell.num)).length : null;
+      html += `<div class="bfloor" data-floor="${floor}">
+        <div class="bfloor__label">${esc(FLOOR_LABEL(floor))}<em>${rooms.length} каб.${freeNow !== null ? ` · свободно сейчас ${freeNow}` : ""}</em></div>`;
+      for (const c of rooms) {
+        const count = B.bells.filter((b) => B.at(c, b.num)).length;
+        const freeNowRoom = B.nowBell && !B.at(c, B.nowBell.num);
+        html += `<div class="broom${freeNowRoom ? " is-free" : ""}"><button data-room="${esc(c.id_1c)}" data-room-title="${esc(roomShort(c))}" title="Расписание кабинета ${esc(roomShort(c))}">
+          <b>${esc(roomShort(c))}</b><span>${count ? `${count} ${plural(count, ["пара", "пары", "пар"])}` : "свободен весь день"}</span></button></div>`;
+        for (const b of B.bells) {
+          const lessons = B.at(c, b.num);
+          if (lessons) { html += bcellHTML(lessons, date, now); continue; }
+          const t = timing(b, date, now);
+          const until = B.freeUntil(c, toMin(b.timeEnd));
+          const text = `Свободен${until ? ` до ${until}` : ""}`;
+          html += `<div class="bfree${t?.kind === "now" ? " is-now" : t?.kind === "past" ? " is-past" : ""}" title="${esc(text)}">${t?.kind === "now" ? esc(text) : "Свободен"}</div>`;
+        }
+      }
+      html += `</div>`;
+    }
+    return `<div class="bscroll"><div class="bgrid" style="--cols:${B.bells.length}">${html}</div></div>`;
+  }
+
+  function pairPickerHTML(date, now, B) {
+    return `<div class="bpairs" role="tablist" aria-label="Пара">${B.bells.map((b) => {
+      const isNow = timing(b, date, now)?.kind === "now", on = b.num === B.pick?.num;
+      return `<button class="bpair${on ? " is-active" : ""}" data-bpair="${b.num}" role="tab" aria-selected="${on}">
+        <b>${b.num}<span class="bpair__long"> пара</span>${isNow ? '<i class="bpair__dot" title="Идёт сейчас"></i>' : ""}</b>
+        <span>${esc(b.timeStart)}–${esc(b.timeEnd)}</span></button>`;
+    }).join("")}</div>`;
+  }
+
+  // преподаватель плитки: фото и «Фамилия И.О.», по строке на каждого
+  function btileWho(lessons) {
+    const names = uniq(lessons.map((l) => l.teacher?.name).filter(Boolean));
+    if (!names.length) return "";
+    return names.map((n) => `<span class="btile__who">${avatarHTML(n, "avatar avatar--xs")}<span>${esc(abbName(n))}</span></span>`).join("");
+  }
+
+  // группа как в парах: значок кафедры и номер
+  const btileGroups = (groups) => `<span class="btile__grps">${groups.filter(Boolean).map((g) => { const p = groupParts(g); return `<span class="btile__grp" title="${esc(g)}"><span class="sg sg--tag">${esc(p.mark)}</span><span>${esc(p.rest)}</span></span>`; }).join("")}</span>`;
+
+  // разделитель «·» между группами нужен только внутри строки: у последней группы строки перед переносом он убирается
+  function trimGroupSeparators() {
+    $$("#week .btile__grps").forEach((box) => {
+      const items = [...box.children];
+      items.forEach((el, i) => el.classList.toggle("no-sep", i < items.length - 1 && items[i + 1].offsetTop > el.offsetTop + 2));
+    });
+  }
+
+  function buildingFreeHTML(date, now, B) {
+    if (!B.pick) return "";
+    let html = "";
+    for (const [floor, rooms] of B.floors) {
+      const free = rooms.filter((c) => !B.at(c, B.pick.num));
+      html += `<div class="bboard__floor"><b>${esc(FLOOR_LABEL(floor))}</b><span>свободно ${free.length} из ${rooms.length}</span></div><div class="btiles">`;
+      for (const c of [...free, ...rooms.filter((c) => !free.includes(c))]) {
+        const lessons = B.at(c, B.pick.num);
+        if (!lessons) {
+          const until = B.freeUntil(c, toMin(B.pick.timeEnd));
+          html += `<button class="btile is-free" data-room="${esc(c.id_1c)}" data-room-title="${esc(roomShort(c))}" title="Расписание кабинета ${esc(roomShort(c))}">
+            <span class="btile__top"><span class="btile__num">${esc(roomShort(c))}</span>${ICON.door}</span>
+            <span class="btile__body">Свободен</span><span class="btile__foot">${until ? `${esc(B.pick.timeStart)} – ${esc(until)}` : `с ${esc(B.pick.timeStart)} до конца дня`}</span></button>`;
+          continue;
+        }
+        const groups = uniq(lessons.map((l) => l.group?.name));
+        html += `<article class="btile" data-detail="${esc(lessons.map((l) => l.id).join(","))}" tabindex="0" role="button">
+          <span class="btile__top"><span class="btile__num">${esc(roomShort(c))}</span></span>
+          <span class="btile__body">${esc(lessons[0].subject?.name || "")}</span>
+          <span class="btile__foot">${btileWho(lessons)}
+            ${btileGroups(groups)}
+            <span class="btile__until">${esc(lessons[0].timeStart)} – ${esc(lessons[0].timeEnd)}</span></span></article>`;
+      }
+      html += `</div>`;
+    }
+    return `${pairPickerHTML(date, now, B)}<div class="bscroll bboard">${html}</div>`;
+  }
+
+  // Телефон: шахматка не читается, поэтому — выбор пары и список кабинетов
+  function buildingListHTML(date, now, B) {
+    if (!B.pick) return "";
+    const free = B.rooms.filter((c) => !B.at(c, B.pick.num));
+    const busy = B.rooms.filter((c) => B.at(c, B.pick.num));
+    const isNow = timing(B.pick, date, now)?.kind === "now";
+    let html = `<div class="bfreelist"><h4>Свободны · ${free.length}</h4><div>${free.map((c) =>
+      `<button data-room="${esc(c.id_1c)}" data-room-title="${esc(roomShort(c))}">${esc(roomShort(c))}</button>`).join("") || "<span>Свободных кабинетов нет</span>"}</div></div>`;
+    html += `<div class="list-sep" aria-hidden="true"><span>Заняты · ${busy.length}</span></div>`;
+    html += busy.map((c) => {
+      const lessons = B.at(c, B.pick.num);
+      return `<article class="brow${isNow ? " is-now" : ""}" data-detail="${esc(lessons.map((l) => l.id).join(","))}" tabindex="0" role="button">
+        <span class="brow__num">${esc(roomShort(c))}</span>
+        <span class="brow__text"><b>${esc(lessons[0].subject?.name || "")}</b>
+        <span class="brow__meta">${btileWho(lessons)}<span class="brow__row">${btileGroups(uniq(lessons.map((l) => l.group?.name)))}<span class="btile__until">${esc(lessons[0].timeStart)} – ${esc(lessons[0].timeEnd)}</span></span></span></span></article>`;
+    }).join("");
+    return `${pairPickerHTML(date, now, B)}<div class="bscroll blist">${html}</div>`;
+  }
+
+  function buildingSummaryHTML(date, now, B) {
+    if (B.nowBell) {
+      const left = toMin(B.nowBell.timeEnd) - nowMin(now);
+      const free = B.rooms.filter((c) => !B.at(c, B.nowBell.num)).length;
+      return `<span class="chip chip--live">${B.nowBell.num} пара · ещё ${fmtDuration(left)}</span>
+        <span class="chip chip--free">Свободно ${free} из ${B.rooms.length}</span>`;
+    }
+    if (!B.bells.length) return `<span class="bsummary__text">Пар нет</span>`;
+    const total = new Set([...B.slots.values()].flat().map((l) => l.id)).size;
+    const first = B.bells[0], last = B.bells.at(-1);
+    let label = `${total} ${plural(total, ["пара", "пары", "пар"])} · ${first.timeStart}–${last.timeEnd}`;
+    if (isoDate(date) === isoDate(now)) {
+      const cur = nowMin(now);
+      if (cur < toMin(first.timeStart)) label = `Пары начнутся в ${first.timeStart}`;
+      else if (cur > toMin(last.timeEnd)) label = "Пары на сегодня закончились";
+      else label = `Перемена · ${B.pick ? `${B.pick.num} пара в ${B.pick.timeStart}` : ""}`;
+    }
+    return `<span class="bsummary__text">${esc(label)}</span>`;
+  }
+
+  function buildingHTML(days, now) {
+    const date = days[state.dayIndex];
+    const B = buildingDay(date, now);
+    const narrow = narrowMQ.matches;
+    const view = state.building.view;
+    const tools = view === "all" && !narrow ? `
+      <label class="bfind">${ICON.search}<input id="bfind" type="search" placeholder="Найти группу или преподавателя" value="${esc(state.building.find)}" autocomplete="off" aria-label="Подсветить группу или преподавателя"><button type="button" class="bfind__clear" id="bfindClear" aria-label="Очистить поиск"${state.building.find ? "" : " hidden"}><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></label>
+      <div class="bchips" role="group" aria-label="Этаж">${[["all", "Все"], ...B.floors.map(([f]) => [f, FLOOR_SHORT(f)])].map(([v, t]) =>
+        `<button class="bchip${state.building.floor === v ? " is-active" : ""}" data-bfloor="${v}" aria-pressed="${state.building.floor === v}">${esc(t)}</button>`).join("")}</div>
+      <button class="bchip bchip--free" data-bonly-free aria-pressed="${state.building.onlyFree}">${ICON.door}Только свободные</button>` : "";
+
+    let body;
+    if (!B.bells.length) body = stateHTML("free", "day");
+    else if (view === "free") body = buildingFreeHTML(date, now, B);
+    else body = narrow ? buildingListHTML(date, now, B) : buildingGridHTML(date, now, B);
+
+    return `<div class="bview">
+      <div class="bbar">
+        ${stripHTML(days, now, "bar")}
+        <div class="bsummary">${buildingSummaryHTML(date, now, B)}</div>
+        <div class="bbar__tools">
+          ${tools}
+          <div class="bswitch" role="tablist" aria-label="Вид">
+            <button class="${view === "all" ? "is-active" : ""}" data-bview="all" role="tab" aria-selected="${view === "all"}">Все кабинеты</button>
+            <button class="${view === "free" ? "is-active" : ""}" data-bview="free" role="tab" aria-selected="${view === "free"}">Свободные</button>
+          </div>
+        </div>
+      </div>
+      ${body}
+    </div>`;
+  }
+
+  // Фильтры шахматки применяем к готовому DOM: поиск печатается без перерисовки и потери фокуса
+  function applyBuildingFilters() {
+    const grid = $("#week .bgrid");
+    if (!grid) return;
+    const { find, floor, onlyFree } = state.building;
+    const needle = normText(find.trim());
+    // гибкий поиск: «ис 24 9 2», «ис24/9-2» и «ис-24/9-2» — одно и то же. Если такой группы нет, ищем по словам вразнобой («мандзюк ис»)
+    const squash = (s) => s.replace(/[^a-zа-я0-9]+/g, "");
+    const words = needle.split(/\s+/).filter(Boolean);
+    const ordered = (hay) => hay.includes(needle) || squash(hay).includes(squash(needle));
+    const anyWords = (hay) => words.every((w) => hay.includes(w) || squash(hay).includes(squash(w)));
+    const cells = $$(".bcell", grid);
+    const matches = cells.some((c) => ordered(c.dataset.find)) ? ordered : anyWords;
+    grid.classList.toggle("is-finding", !!needle);
+    grid.classList.toggle("only-free", onlyFree);
+    $$(".bfloor", grid).forEach((f) => { f.hidden = floor !== "all" && f.dataset.floor !== floor; });
+    cells.forEach((c) => c.classList.toggle("is-hit", !!needle && matches(c.dataset.find)));
+  }
+
   // ---------- Шапка: подпись периода ----------
   function weekRangeLabel(days) {
     const a = days[0], b = days[5];
@@ -763,7 +1071,7 @@
   function renderPeriod(days, now) {
     const label = $("#periodLabel"), sub = $("#periodSub");
     if (!days) { label.textContent = "—"; sub.textContent = weekRelLabel(state.weekOffset); return; }
-    if (state.view === "day" && state.dayIndex != null) {
+    if (dayNav() && state.dayIndex != null) {
       const d = days[state.dayIndex];
       const diff = dayDiff(d, now);
       label.textContent = `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
@@ -776,28 +1084,31 @@
 
   function renderTodayBtn() {
     const todayIdx = state.week ? weekDates().findIndex((d) => isoDate(d) === isoDate(new Date())) : -1;
-    const onToday = state.weekOffset === 0 && (state.view === "week" || state.dayIndex === todayIdx || todayIdx < 0);
+    const onToday = state.weekOffset === 0 && (!dayNav() || state.dayIndex === todayIdx || todayIdx < 0);
     $("#todayBtn").disabled = onToday;
   }
 
   // ---------- Рендер расписания ----------
   let navDir = 0; // направление последнего перехода — для анимации появления
+  // Листаем по дням: режим «День» и «Весь корпус» (неделя всех кабинетов разом не читается)
+  const dayNav = () => state.view === "day" || isBuilding();
 
   function renderWeek({ keepScroll = false } = {}) {
     const week = $("#week");
     const scroll = [week.scrollLeft, week.scrollTop];
     week.removeAttribute("data-anim");
     week.style.gridTemplateColumns = "";
+    $("#headStrip").hidden = true;
     renderTodayBtn();
 
     const now = new Date();
-    const isDay = state.view === "day";
+    const isDay = state.view === "day" && !isBuilding();
 
     // Состояния без расписания: загрузка, ошибка, «не опубликовано». В режиме «День» остаются шапка и полоска дней.
     const kind = state.error ? "error" : state.loadingWeek ? "loading" : !state.week ? "unpublished" : null;
     if (kind) {
       const days = placeholderDays();
-      if (isDay && state.dayIndex == null) {
+      if (dayNav() && state.dayIndex == null) {
         const t = days.findIndex((d) => isoDate(d) === isoDate(now));
         state.dayIndex = t >= 0 ? t : 0;
       }
@@ -813,12 +1124,44 @@
     }
 
     const days = weekDates();
-    if (isDay && state.dayIndex == null) {
+    if (dayNav() && state.dayIndex == null) {
       const t = days.findIndex((d) => isoDate(d) === isoDate(now));
       state.dayIndex = t >= 0 ? t : 0;
     }
     renderPeriod(days, now);
     renderTodayBtn();
+
+    if (isBuilding() && state.lessons.length) {
+      // сохраняем прокрутку шахматки и фокус в поиске: раз в минуту экран перерисовывается
+      const prev = week.querySelector(".bscroll");
+      const inner = prev ? [prev.scrollLeft, prev.scrollTop] : null;
+      const findFocus = document.activeElement?.id === "bfind" ? document.activeElement.selectionStart : null;
+      week.className = "week is-building";
+      week.innerHTML = buildingHTML(days, now);
+      // на десктопе дни выбираются в шапке, на месте пейджера; на телефоне полоса остаётся внизу экрана
+      const headStrip = $("#headStrip");
+      headStrip.hidden = mobileMQ.matches;
+      headStrip.innerHTML = mobileMQ.matches ? "" : stripHTML(days, now, "bar");
+      applyBuildingFilters();
+      trimGroupSeparators();
+      // выбранная пара должна быть видна в горизонтальной ленте пар
+      const bp = week.querySelector(".bpair.is-active");
+      if (bp) { const strip = bp.parentElement; strip.scrollLeft = bp.offsetLeft - (strip.clientWidth - bp.offsetWidth) / 2; }
+      const sc = week.querySelector(".bscroll");
+      if (sc && keepScroll && inner) [sc.scrollLeft, sc.scrollTop] = inner;
+      else if (sc) {
+        // к идущей паре, если её колонка за правым краем
+        const col = sc.querySelector(".bhead.is-now");
+        const corner = sc.querySelector(".bhead--corner");
+        if (col && corner) {
+          const left = col.getBoundingClientRect().left - sc.getBoundingClientRect().left;
+          if (left + col.offsetWidth > sc.clientWidth) sc.scrollLeft = left - corner.offsetWidth - 8;
+        }
+      }
+      if (findFocus !== null) { const inp = $("#bfind"); inp.focus(); inp.setSelectionRange(findFocus, findFocus); }
+      if (navDir) { void week.offsetWidth; week.dataset.anim = navDir > 0 ? "next" : "prev"; navDir = 0; }
+      return;
+    }
 
     if (!state.lessons.length && !isDay) {
       week.className = "week is-msg";
@@ -901,10 +1244,13 @@
       b.classList.toggle("is-active", b.dataset.view === state.view);
       b.setAttribute("aria-selected", b.dataset.view === state.view);
     });
+    // у «Всего корпуса» свой переключатель вида внутри экрана, а листается он по дням
+    $("#viewSwitch").hidden = isBuilding();
+    $("#app").classList.toggle("is-building", isBuilding()); // в корпусе дни выбираются полосой в самом экране, пейджер не нужен
     $$(".segmented").forEach(syncThumb);
     $("#favFilter").setAttribute("aria-pressed", state.onlyFav);
-    $("#prevWeek").setAttribute("aria-label", state.view === "day" ? "Предыдущий день" : "Предыдущая неделя");
-    $("#nextWeek").setAttribute("aria-label", state.view === "day" ? "Следующий день" : "Следующая неделя");
+    $("#prevWeek").setAttribute("aria-label", dayNav() ? "Предыдущий день" : "Предыдущая неделя");
+    $("#nextWeek").setAttribute("aria-label", dayNav() ? "Следующий день" : "Следующая неделя");
     renderHeader();
     renderCrumb();
     renderList();
@@ -1019,7 +1365,7 @@
 
   function step(dir) {
     navDir = dir;
-    if (state.view === "day" && state.week) {
+    if (dayNav() && state.week) {
       state.dayIndex += dir;
       if (state.dayIndex < 0) { state.weekOffset--; state.dayIndex = 5; }
       else if (state.dayIndex > 5) { state.weekOffset++; state.dayIndex = 0; }
@@ -1204,7 +1550,7 @@
     if (item.dataset.divisionId) {
       // результат поиска или избранное: сайдбар переходит к месту выбранного элемента
       state.divisionId = item.dataset.divisionId;
-      state.tab = type;
+      state.tab = type === "building" ? "room" : type;
       state.courseFilter = type === "group" ? (item.dataset.course ?? state.courseFilter) : null;
     }
     if (state.query) clearSearch();
@@ -1222,18 +1568,84 @@
     if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-detail]")) { e.preventDefault(); e.target.click(); }
   });
 
+  // Поиск по шахматке: подсвечиваем пары группы или преподавателя и прокручиваем к первой
+  $("#week").addEventListener("input", (e) => {
+    if (e.target.id !== "bfind") return;
+    state.building.find = e.target.value;
+    $("#bfindClear").hidden = !e.target.value;
+    applyBuildingFilters();
+    // прокручиваем только сетку: scrollIntoView сдвинул бы и #week вместе с панелью инструментов
+    const hit = $("#week .bcell.is-hit"), sc = hit?.closest(".bscroll");
+    if (!hit || !sc) return;
+    const head = sc.querySelector(".bhead")?.offsetHeight || 0, side = sc.querySelector(".broom")?.offsetWidth || 0;
+    const r = hit.getBoundingClientRect(), box = sc.getBoundingClientRect();
+    const top = r.top - box.top, left = r.left - box.left;
+    const to = { behavior: "smooth" };
+    if (top < head || r.bottom > box.bottom) to.top = sc.scrollTop + top - head - (sc.clientHeight - head - r.height) / 2;
+    if (left < side || r.right > box.right) to.left = sc.scrollLeft + left - side - 8;
+    sc.scrollTo(to);
+  });
+  narrowMQ.addEventListener("change", () => { if (isBuilding() && state.week) renderWeek(); });
+
+  function pickDay(i) {
+    navDir = Math.sign(i - state.dayIndex);
+    state.dayIndex = i;
+    state.building.pair = null;
+    renderWeek();
+  }
+  $("#headStrip").addEventListener("click", (e) => {
+    const pick = e.target.closest("[data-pick-day]");
+    if (pick) pickDay(Number(pick.dataset.pickDay));
+  });
+  window.addEventListener("resize", () => { if (isBuilding()) trimGroupSeparators(); });
+  mobileMQ.addEventListener("change", () => { if (isBuilding() && state.week) renderWeek({ keepScroll: true }); });
+
   $("#week").addEventListener("click", (e) => {
+    if (e.target.closest("#bfindClear")) {
+      const inp = $("#bfind");
+      inp.value = "";
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      inp.focus();
+      return;
+    }
     if (e.target.closest("#retry")) { apiCache.clear(); refreshWeek(); return; }
 
     const openDay = e.target.closest("[data-open-day]");
     if (openDay) { state.view = "day"; state.dayIndex = Number(openDay.dataset.openDay); renderChrome(); renderWeek(); return; }
 
     const pick = e.target.closest("[data-pick-day]");
-    if (pick) {
-      const i = Number(pick.dataset.pickDay);
-      navDir = Math.sign(i - state.dayIndex);
-      state.dayIndex = i;
+    if (pick) { pickDay(Number(pick.dataset.pickDay)); return; }
+
+    // «Весь корпус»: вид, пара, этаж, «только свободные», переход к расписанию кабинета
+    const bview = e.target.closest("[data-bview]");
+    if (bview) {
+      state.building.view = bview.dataset.bview;
+      store.set("sielom.buildingView", state.building.view);
       renderWeek();
+      return;
+    }
+    const bpair = e.target.closest("[data-bpair]");
+    if (bpair) { state.building.pair = Number(bpair.dataset.bpair); renderWeek({ keepScroll: true }); return; }
+    const bfloor = e.target.closest("[data-bfloor]");
+    if (bfloor) {
+      state.building.floor = bfloor.dataset.bfloor;
+      $$("[data-bfloor]").forEach((b) => { const on = b === bfloor; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", on); });
+      applyBuildingFilters();
+      return;
+    }
+    const onlyFree = e.target.closest("[data-bonly-free]");
+    if (onlyFree) {
+      state.building.onlyFree = !state.building.onlyFree;
+      onlyFree.setAttribute("aria-pressed", state.building.onlyFree);
+      applyBuildingFilters();
+      return;
+    }
+    const room = e.target.closest("[data-room]");
+    if (room) {
+      state.selected = { kind: "room", id: room.dataset.room, title: room.dataset.roomTitle, divisionId: state.selected.divisionId };
+      state.tab = "room";
+      store.set("sielom.selection", state.selected);
+      refreshWeek();
       return;
     }
 
@@ -1259,7 +1671,11 @@
     const full = roomOf(l), short = full.replace(/^[А-Яа-яA-Za-z]+-/, "");
     const ext = externalPlace(full);
     const line = ext ? ext.address : [addr, full !== short ? full : ""].filter(Boolean).join(" · ");
-    return `<div class="place${l.note ? " is-changed" : ""}">
+    // плашка ведёт в расписание кабинета (кроме случая, когда оно уже открыто)
+    const nav = l.cabinet && state.selected.kind !== "room"
+      ? ` nav-item" data-nav-type="room" data-nav-id="${esc(l.cabinet.id_1c)}" data-nav-title="${esc(short)}" data-nav-division="${esc(l.division?.id_1c || "")}" tabindex="0" role="button" aria-label="Расписание кабинета ${esc(full)}`
+      : "";
+    return `<div class="place${l.note ? " is-changed" : ""}${nav}">
       <span class="place__room" aria-label="Кабинет ${esc(full)}">${esc(short)}</span>
       <div class="place__text">
         <span class="place__corps">${ext ? esc(ext.name) : div ? esc("Корпус " + div.corps) : "Кабинет"}</span>
@@ -1391,7 +1807,8 @@
       const title = nav.dataset.navTitle || id;
       const g = type === "group" ? state.groups.find((x) => x.id_1c === id) : null;
       e.currentTarget.close();
-      state.selected = { kind: type, id, title, divisionId: g ? g.divisionId : state.divisionId };
+      state.selected = { kind: type, id, title, divisionId: g ? g.divisionId : nav.dataset.navDivision || state.divisionId };
+      if (type === "room") state.tab = "room";
       store.set("sielom.selection", state.selected);
       refreshWeek();
     }
@@ -1408,7 +1825,7 @@
     let startX = 0, startY = 0, scrollX = 0, scrollY = 0;
 
     el.addEventListener("mousedown", (e) => {
-      if (e.button !== 0 || state.view === "day") return;
+      if (e.button !== 0 || dayNav()) return;
       if (e.target.closest("button,a,input")) return;
       drag = true; moved = false;
       startX = e.clientX; startY = e.clientY;
@@ -1444,14 +1861,23 @@
 
   makeDraggable($("#week"), "xy"); // расписание — обе оси
 
-  // Свайп влево/вправо в режиме «День» на тач-экранах
+  // Свайп влево/вправо в режиме «День» и в корпусе на узком экране
   {
     let sx = 0, sy = 0;
     $("#week").addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
     $("#week").addEventListener("touchend", (e) => {
-      if (state.view !== "day") return;
+      // в широкой шахматке горизонтальный свайп прокручивает кабинеты, а не дни; в узком виде корпуса свайп листает пары
+      if (isBuilding() ? !narrowMQ.matches : state.view !== "day") return;
+      if (e.target.closest(".bpairs")) return;
       const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);
+      if (!(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5)) return;
+      if (isBuilding()) {
+        // в корпусе свайп листает пары, а не дни
+        const cur = $("#week .bpair.is-active");
+        (dx < 0 ? cur?.nextElementSibling : cur?.previousElementSibling)?.click();
+        return;
+      }
+      step(dx < 0 ? 1 : -1);
     }, { passive: true });
   }
 
