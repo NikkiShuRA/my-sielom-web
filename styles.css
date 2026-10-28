@@ -573,7 +573,9 @@ svg { flex-shrink: 0; }
 }
 .week {
   height: 100%;
-  display: flex; gap: 6px; align-items: flex-start;
+  display: grid; gap: 6px; align-items: start; align-content: start;
+  grid-auto-rows: max-content; /* строка = самая высокая карточка, а не доля свободного места */
+  grid-template-columns: repeat(6, minmax(var(--day-w), 320px));
   justify-content: safe center;
   padding: 8px;
   overflow: auto;
@@ -582,6 +584,7 @@ svg { flex-shrink: 0; }
 }
 .week:active { cursor: grabbing; }
 .week.is-msg, .week.is-day { cursor: auto; }
+.week.is-day, .week.is-msg { display: flex; }
 .week.is-msg { align-items: center; }
 .week.is-loading { pointer-events: none; }
 
@@ -601,14 +604,14 @@ svg { flex-shrink: 0; }
    ========================================================= */
 .day {
   --day-bg: var(--c-bg);
-  flex: 1 0 var(--day-w); max-width: 320px;
-  display: flex; flex-direction: column; gap: 6px;
+  /* колонка дня занимает все строки общей сетки; строки (subgrid) общие у всех дней */
+  grid-row: span var(--rows, 5);
+  display: grid; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr);
   padding: 6px;
   border-radius: var(--r-xl);
   background: var(--day-bg);
 }
 .day.is-today { --day-bg: var(--c-accent-tint); }
-.week.is-loading .day { gap: 8px; }
 
 .day__head {
   position: sticky; top: -8px; z-index: 2;
@@ -635,8 +638,7 @@ svg { flex-shrink: 0; }
 .day-head:hover .day-head__go, .day-head:focus-visible .day-head__go { opacity: 1; transform: none; color: var(--c-text-2); }
 .day.is-today .day-head__go { color: var(--c-on-accent); }
 
-.lessons { display: flex; flex-direction: column; gap: 6px; }
-.day__empty { padding: 32px 12px; text-align: center; color: var(--c-faint); }
+.day__empty { grid-row: 2 / -1; padding: 32px 12px; text-align: center; color: var(--c-faint); }
 
 .shift-divider {
   display: flex; align-items: center; gap: 8px;
@@ -699,6 +701,10 @@ svg { flex-shrink: 0; }
   word-break: break-word;
 }
 
+/* В неделе название — максимум 2 строки; если в растянутой карточке есть место, JS (fitTitles) добавляет строки.
+   Кабинет и преподаватель прижаты к низу */
+.day .lesson__title { -webkit-line-clamp: var(--clamp, 2); }
+.day .lesson .parts { margin-top: auto; }
 .parts { display: flex; flex-direction: column; gap: 4px; }
 .part { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; }
 .part:has(.who-stack) { align-items: stretch; }
@@ -724,24 +730,15 @@ svg { flex-shrink: 0; }
 .room--lg { padding: 4px 10px; font-size: 15px; }
 .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-text-2); }
 
-/* Прошедшая пара (свёрнута) */
-.lesson-past {
-  display: flex; align-items: center; gap: 8px;
-  width: 100%; height: 38px; padding: 0 12px 0 8px;
-  border-radius: var(--r-lg);
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--c-line);
-  color: var(--c-muted); font-size: 13px; text-align: left;
-  transition: background var(--dur), color var(--dur);
-}
-.lesson-past:hover { background: var(--c-surface); color: var(--c-text); }
-.lesson-past .lesson__num { background: transparent; color: inherit; }
-.lesson-past__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: line-through; text-decoration-color: var(--c-faint); }
-.lesson-past__check { display: grid; color: var(--c-faint); }
+/* Прошедшая пара в неделе: тусклая карточка, зачёркнутое название, серая полоска слева */
+.day .lesson.is-past { opacity: .7; }
+.day .lesson.is-past:hover { opacity: 1; }
+.day .lesson.is-past .lesson__title { text-decoration: line-through; text-decoration-color: var(--c-text-2); text-decoration-thickness: 2px; color: var(--c-text-2); }
+.day .lesson.is-past::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c-line-strong); }
 
 /* Пустой слот */
 .slot {
-  height: 32px; padding: 0 12px 0 8px;
+  min-height: 32px; padding: 0 12px 0 8px;
   display: flex; align-items: center; gap: 8px;
   border-radius: var(--r-lg);
   border: 1px dashed var(--c-line-strong);

@@ -47,7 +47,6 @@
     view: "week",
     weekOffset: 0,
     dayIndex: null,
-    expanded: new Set(),
     divisions: [],
     groups: [],
     week: null,
@@ -444,17 +443,6 @@
       </article>`;
   }
 
-  // Прошедшая пара в режиме недели — свёрнутая строка
-  function pastHTML(lessons) {
-    const l0 = lessons[0];
-    const subject = l0.subject ? l0.subject.abb_name || l0.subject.name : "";
-    return `<button class="lesson-past" data-expand="${esc(lessons.map((l) => l.id).join(","))}" title="Показать прошедшую пару">
-      <span class="lesson__num">${l0.lessonNumber}</span>
-      <span class="lesson-past__title">${esc(subject)}</span>
-      <span class="lesson-past__check">${ICON.check}</span>
-    </button>`;
-  }
-
   function slotHTML(num) {
     const bells = state.bells.get(num);
     return `<div class="slot" aria-hidden="true">
@@ -494,23 +482,25 @@
     const byNum = lessonsByNum(iso);
     const next = nextNum(byNum, date, now);
 
-    let body = "";
+    // Карточки лежат прямо в колонке: строки сетки общие для всех дней (subgrid),
+    // поэтому высота строки равна самой высокой карточке среди дней
+    const items = [];
     let prevIsAfterShift = false;
     for (const num of state.lessonNums) {
       const bells = state.bells.get(num);
       const isAfterShift = bells ? bells.timeStart >= SHIFT_BORDER : false;
-      if (body && isAfterShift && !prevIsAfterShift) body += '<div class="shift-divider" role="separator">пересменка</div>';
+      if (items.length && isAfterShift && !prevIsAfterShift) items.push('<div class="shift-divider" role="separator">пересменка</div>');
       prevIsAfterShift = isAfterShift;
 
       const lessons = byNum.get(num);
-      if (!lessons) { body += slotHTML(num); continue; }
-      const collapsed = lessons.every((l) => timing(l, date, now)?.kind === "past" && !state.expanded.has(l.id));
-      body += collapsed ? pastHTML(lessons) : lessonCardHTML(lessons, date, now, { next: num === next });
+      if (!lessons) { items.push(slotHTML(num)); continue; }
+      items.push(lessonCardHTML(lessons, date, now, { next: num === next }));
     }
-    if (!byNum.size) body = '<div class="day__empty">Пар нет</div>';
+    const rows = 1 + items.length; // шапка + строки пар
+    const body = byNum.size ? items.join("") : '<div class="day__empty">Пар нет</div>';
 
     return `
-      <section class="day${isToday ? " is-today" : iso < isoDate(now) ? " is-past" : ""}">
+      <section class="day${isToday ? " is-today" : iso < isoDate(now) ? " is-past" : ""}" style="--rows:${rows}">
         <div class="day__head">
           <button class="day-head" data-open-day="${index}" title="Открыть день">
             <span class="day-head__wd">${WEEKDAYS[date.getDay()]}</span>
@@ -520,7 +510,7 @@
           </button>
           ${noticeHTML([...byNum.values()].flat())}
         </div>
-        <div class="lessons">${body}</div>
+        ${body}
       </section>`;
   }
 
@@ -707,7 +697,30 @@
     if (navDir) { void week.offsetWidth; week.dataset.anim = navDir > 0 ? "next" : "prev"; navDir = 0; }
     if (keepScroll) [week.scrollLeft, week.scrollTop] = scroll;
     else scrollToToday();
+    fitTitles();
   }
+
+  // Название пары по умолчанию — максимум 2 строки. Если карточка растянута строкой сетки
+  // и под названием есть свободное место, показываем столько лишних строк, сколько влезает.
+  function fitTitles() {
+    const titles = $$("#week .day .lesson__title");
+    titles.forEach((t) => t.style.removeProperty("--clamp"));
+    const plan = titles.map((t) => {
+      const parts = t.parentElement.querySelector(".parts");
+      if (!parts) return null;
+      const lh = parseFloat(getComputedStyle(t).lineHeight);
+      const gap = parseFloat(getComputedStyle(t.parentElement).rowGap) || 0;
+      const free = parts.getBoundingClientRect().top - t.getBoundingClientRect().bottom - gap;
+      return lh > 0 && free >= lh ? 2 + Math.floor((free + 0.5) / lh) : null;
+    });
+    titles.forEach((t, i) => { if (plan[i]) t.style.setProperty("--clamp", plan[i]); });
+  }
+  let fitFrame = 0;
+  new ResizeObserver(() => {
+    cancelAnimationFrame(fitFrame);
+    fitFrame = requestAnimationFrame(() => { if ($("#week").querySelector(".day .lesson")) fitTitles(); });
+  }).observe($("#week"));
+  document.fonts?.ready.then(() => fitTitles());
 
   // В режиме недели прокручиваем к сегодняшнему дню, если он за пределами экрана
   function scrollToToday() {
@@ -983,7 +996,6 @@
     const selDivId = item.dataset.divisionId || state.divisionId;
     if (item.dataset.divisionId) state.divisionId = item.dataset.divisionId;
     state.selected = { kind: type, id: item.dataset.id, title: item.dataset.title, divisionId: selDivId };
-    state.expanded.clear();
     store.set("sielom.selection", state.selected);
     setDrawer(false);
     refreshWeek();
@@ -999,9 +1011,6 @@
 
   $("#week").addEventListener("click", (e) => {
     if (e.target.closest("#retry")) { apiCache.clear(); refreshWeek(); return; }
-
-    const exp = e.target.closest("[data-expand]");
-    if (exp) { exp.dataset.expand.split(",").forEach((id) => state.expanded.add(id)); renderWeek({ keepScroll: true }); return; }
 
     const openDay = e.target.closest("[data-open-day]");
     if (openDay) { state.view = "day"; state.dayIndex = Number(openDay.dataset.openDay); renderChrome(); renderWeek(); return; }
@@ -1154,7 +1163,6 @@
       const g = type === "group" ? state.groups.find((x) => x.id_1c === id) : null;
       e.currentTarget.close();
       state.selected = { kind: type, id, title, divisionId: g ? g.divisionId : state.divisionId };
-      state.expanded.clear();
       store.set("sielom.selection", state.selected);
       refreshWeek();
     }
