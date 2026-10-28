@@ -313,6 +313,61 @@
     .roadmap { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
     .roadmap span { padding: 8px 14px; border-radius: 999px; background: var(--c-bg); box-shadow: var(--sh-sm); font-size: 14px; color: var(--c-text-2); }
     .foot { margin-top: 40px; font-size: 13px; color: var(--c-muted); }
+
+    .detail-shot .phone { display: none; }
+    /* ===== Телефоны ===== */
+    html, body { overflow-x: clip; }
+    @media (max-width: 600px) {
+      .topnav { top: 10px; left: 10px; right: 10px; gap: 8px; }
+      .brand { padding: 5px; font-size: 0; gap: 0; }   /* только логотип, без подписи */
+      .brand img { width: 32px; height: 32px; }
+      .topnav__right { gap: 6px; }
+      .pill-btn { height: 38px; padding: 0 14px; font-size: 13px; }
+      .counter { display: none; }
+
+      .slide { padding: 68px 16px 40px; }
+      .hero { padding-top: 68px; }
+      .eyebrow { font-size: 12px; margin-bottom: 14px; }
+      .lead { margin-top: 16px; }
+      .hero__cta .pill-btn { height: 48px; padding: 0 20px; font-size: 15px; }
+      .detail-shot .shot { display: none; }
+      .detail-shot .phone { display: block; margin: 0 auto; width: min(240px, 62vw); }
+      .hero__stage { margin-top: 32px; padding-bottom: 28px; }
+      /* скриншот целиком, без обрезки по бокам; телефон — поверх нижнего угла */
+      .hero__stage .shot { height: auto; transform: none; -webkit-mask-image: none; mask-image: none; }
+      .hero__stage .shot img { height: auto; object-fit: initial; }
+      .hero__stage .phone { top: auto; bottom: 0; right: 6px; width: 104px; border-radius: 22px; padding: 4px; }
+      .hero__stage .phone img { border-radius: 18px; }
+
+      .demo { padding: 16px; }
+      .demo__day { font-size: 24px; }
+      .demo__clock { font-size: 26px; }
+      .tl-row { grid-template-columns: 44px 14px 1fr; gap: 8px; }
+      .tl-time { font-size: 14px; }
+      .break { margin-left: 66px; }
+      .card { padding: 12px 14px; }
+      .card__title { font-size: 16px; }
+
+      .tabs { display: flex; width: 100%; margin-top: 22px; }
+      .tab { flex: 1; min-width: 0; padding: 10px 4px; font-size: 13px; }
+      .tab-copy { min-height: 0; }
+
+      .phones { gap: 12px; }
+      .phones .phone { width: min(200px, 44vw); border-radius: 32px; padding: 7px; }
+      .phones .phone img { border-radius: 26px; }
+      .phones .phone:nth-child(2) { margin-top: 32px; }
+
+      .table { font-size: 13px; }
+      .table th, .table td { padding: 9px 8px; }
+      .table th { font-size: 10.5px; letter-spacing: .03em; }
+
+      .tile { padding: 16px; }
+      .key-row { grid-template-columns: 84px 1fr; gap: 10px; padding: 10px 12px; }
+      .key-row.is-hit { transform: none; }
+      .node { padding: 16px; }
+      .qr { width: 168px; height: 168px; }
+      .final .h-xl { font-size: clamp(24px, 7.4vw, 32px); overflow-wrap: anywhere; }   /* длинный адрес в одну строку */
+    }
   </style>
 </head>
 <body>
@@ -451,7 +506,7 @@
     <!-- 6. Карточка пары -->
     <section class="slide" id="s-detail" data-title="Подробности пары">
       <div class="slide__inner split split--rev">
-        <div class="rv"><div class="shot"><img src="screenshots/modal-light.webp" alt="Окно с подробностями пары" width="1600" height="1000" loading="lazy"></div></div>
+        <div class="rv detail-shot"><div class="shot"><img src="screenshots/modal-light.webp" alt="Окно с подробностями пары" width="1600" height="1000" loading="lazy"></div><div class="phone"><img src="screenshots/mobile-modal-light.webp" alt="Подробности пары на телефоне" width="780" height="1688" loading="lazy"></div></div>
         <div>
           <span class="eyebrow rv">Один тап — всё о паре</span>
           <h2 class="h-lg rv">Где, кто, с кем</h2>
@@ -472,7 +527,12 @@
         <div>
           <span class="eyebrow rv">Сделано для телефона</span>
           <h2 class="h-lg rv">Расписание — в кармане, а не в зуме</h2>
-          <p class="lead rv">На телефоне открывается режим «День»: полоса дней недели сверху, свайп влево-вправо листает дни, подробности выезжают нижней шторкой. Все кнопки — от 44 px под палец.</p>
+          <p class="lead rv">На телефоне открывается режим «День». Всё управление — внизу, под большим пальцем: полоса дней недели и переключатель дня. Свайп листает дни, подробности выезжают нижней шторкой.</p>
+          <ul class="bullets rv">
+            <li><span class="ico">↓</span><span><b>Навигация снизу:</b> стрелки, «День / Неделя» и полоса дней — не нужно тянуться к верху экрана</span></li>
+            <li><span class="ico">⋮</span><span><b>Точки под числом</b> — по одной на каждую пару, в два ряда: первая и вторая смена; пустая точка — свободная пара</span></li>
+            <li><span class="ico">▢</span><span><b>Ярлык на экран:</b> добавьте на главный экран или рабочий стол — откроется как приложение</span></li>
+          </ul>
         </div>
         <div class="phones rv">
           <div class="phone"><img src="screenshots/mobile-day-light.webp" alt="День на телефоне, светлая тема" width="780" height="1688" loading="lazy"></div>
@@ -526,7 +586,9 @@
           <div class="tile"><div class="tile__ico">★</div><h3>Избранное</h3><p>Группы, преподаватели и кабинеты — в один клик, фильтр «только избранное».</p></div>
           <div class="tile"><div class="tile__ico">⌂</div><h3>Запоминает выбор</h3><p>Открываешь сайт — сразу твоя группа и твой режим просмотра.</p></div>
           <div class="tile"><div class="tile__ico">↻</div><h3>Всегда актуально</h3><p>Данные берутся напрямую из API sielom.ru, без копий и задержек.</p></div>
-          <div class="tile"><div class="tile__ico">⚡</div><h3>Быстро</h3><p>Запросы кэшируются, список сотрудников хранится локально сутки.</p></div>
+          <div class="tile"><div class="tile__ico">⚡</div><h3>Быстро</h3><p>Список сотрудников хранится локально сутки, шрифты и иконки — свои, ничего лишнего не грузится.</p></div>
+          <div class="tile"><div class="tile__ico">▢</div><h3>Как приложение</h3><p>Иконка, ярлык на рабочем столе или главном экране, запуск в отдельном окне.</p></div>
+          <div class="tile"><div class="tile__ico">✓</div><h3>Работает из России</h3><p>Без Google Fonts и чужих прокси: статика на GitHub Pages и прямые запросы к API.</p></div>
         </div>
       </div>
     </section>
@@ -536,19 +598,19 @@
       <div class="slide__inner">
         <span class="eyebrow rv">Под капотом</span>
         <h2 class="h-lg rv">Без фреймворков. Без сборки.</h2>
-        <p class="lead rv" style="max-width:60ch">Чистые HTML, CSS и JavaScript. Единственный серверный код — прокси на Vercel, который обходит CORS к официальному API.</p>
+        <p class="lead rv" style="max-width:60ch">Чистые HTML, CSS и JavaScript. Своего сервера нет вообще: сайт — статика на GitHub Pages, а браузер ходит в официальный API напрямую (он отдаёт CORS-заголовки).</p>
         <div class="arch rv">
-          <div class="node"><h3>Браузер</h3><code>index.html</code><code>styles.css</code><code>app.js</code></div>
+          <div class="node"><h3>GitHub Pages</h3><code>index.html · app.js</code><code>styles.css · fonts.css</code><code>шрифты, иконки</code></div>
           <div class="arrow">→</div>
-          <div class="node node--accent"><h3>Vercel</h3><code>/schedule/* → api/proxy.js</code><code>/strapi/* → api/proxy.js</code></div>
+          <div class="node node--accent"><h3>Браузер</h3><code>fetch напрямую,</code><code>без прокси</code></div>
           <div class="arrow">→</div>
           <div class="node"><h3>sielom.ru</h3><code>sielom.ru/schedule/api</code><code>strapi.sielom.ru/api</code></div>
         </div>
         <div class="stats rv">
           <div class="stat"><b>0</b><span>npm-зависимостей</span></div>
-          <div class="stat"><b>3</b><span>файла фронтенда</span></div>
+          <div class="stat"><b>4</b><span>файла фронтенда</span></div>
           <div class="stat"><b>~110 КБ</b><span>исходников целиком</span></div>
-          <div class="stat"><b>1</b><span>serverless-функция</span></div>
+          <div class="stat"><b>0</b><span>серверного кода</span></div>
         </div>
       </div>
     </section>
@@ -563,7 +625,7 @@
           <a class="pill-btn pill-btn--accent" href="https://nikkishura.github.io/my-sielom-web/" target="_blank" rel="noopener">Открыть расписание →</a>
           <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">Исходный код</a>
         </div>
-        <div class="roadmap rv"><span>Скоро: уведомления о начале пары</span><span>Экспорт в календарь</span><span>PWA и офлайн</span></div>
+        <div class="roadmap rv"><span>Скоро: уведомления о начале пары</span><span>Экспорт в календарь</span><span>Офлайн-режим</span></div>
         <p class="foot">Неофициальный проект, не связан с СИЭУиП. Данные — с sielom.ru.</p>
       </div>
     </section>
