@@ -765,9 +765,11 @@ svg { flex-shrink: 0; }
 .dayview {
   max-width: 760px; margin: 0 auto;
   padding: 0 24px 40px;
+  min-height: 100%; /* пустые состояния центрируются по всей высоте области */
   display: flex; flex-direction: column; gap: 16px;
 }
 .week.is-loading .dayview { padding-top: 16px; }
+.dayview:has(> .dv-content > .empty) { padding-bottom: 0; } /* без нижнего отступа состояние центрируется точно */
 .dv-content { flex: 1; display: flex; flex-direction: column; gap: 16px; }
 
 /* Полоса дней недели */
@@ -1001,7 +1003,7 @@ svg { flex-shrink: 0; }
   .app__body { display: block; }
   .week-wrap { height: 100%; border-radius: var(--r-xl); }
   /* полоса дней — внизу, над панелью навигации */
-  .dayview { padding: 16px 12px 0; min-height: 100%; }
+  .dayview { padding: 16px 12px 0; }
   .strip { order: 99; }
   .strip {
     top: auto; bottom: 0; margin: auto -12px 0;
