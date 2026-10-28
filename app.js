@@ -11,9 +11,9 @@
   const MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
   const MONTHS_SHORT = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
   const KIND_LABEL = { group: "Группа", teacher: "Преподаватель", room: "Кабинет" };
-  // Смена определяется по номеру пары (1–3 — первая, с 4-й — вторая): время пар в корпусах разное,
-  // например 4-я пара начинается и в 13:20, и в 13:40, поэтому границу по времени не провести
-  const isSecondShift = (num) => num >= 4;
+  // Между парами показываем длинный перерыв (от 25 мин) разделителем «Перерыв N мин». Он берётся из самих данных,
+  // поэтому не зависит от того, как называть смены и каким бывает график звонков в корпусе
+  const LONG_BREAK = 25;
   const EMPLOYEE_CACHE_KEY = "sielom.employees.v1";
   const EMPLOYEE_CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -64,6 +64,7 @@
     divisionLessons: [],
     cabinets: new Map(),
     bells: new Map(),
+    breaks: new Map(), // номер пары → типичный перерыв до следующей, мин
     lessonNums: [],
     employeePhotos: new Map(),
     searchIndex: null, // { weekId, teachers: [], rooms: [] } — для глобального поиска
@@ -614,11 +615,14 @@
     // Карточки лежат прямо в колонке: строки сетки общие для всех дней (subgrid),
     // поэтому высота строки равна самой высокой карточке среди дней
     const items = [];
-    let prevIsAfterShift = false;
+    let prevNum = null;
     for (const num of state.lessonNums) {
-      const isAfterShift = isSecondShift(num);
-      if (items.length && isAfterShift && !prevIsAfterShift) items.push('<div class="shift-divider" role="separator">пересменка</div>');
-      prevIsAfterShift = isAfterShift;
+      if (prevNum !== null && gapBetween(prevNum, num) >= LONG_BREAK) {
+        // строка-разделитель общая для всех дней (чтобы сетка была ровной), а подпись — реальный перерыв этого дня
+        const a = byNum.get(prevNum)?.[0] || state.bells.get(prevNum), b = byNum.get(num)?.[0] || state.bells.get(num);
+        items.push(breakDividerHTML(a && b ? toMin(b.timeStart) - toMin(a.timeEnd) : gapBetween(prevNum, num)));
+      }
+      prevNum = num;
 
       const lessons = byNum.get(num);
       if (!lessons) { items.push(slotHTML(num)); continue; }
@@ -644,20 +648,22 @@
 
   // ---------- Режим «День» ----------
   function stripHTML(days, now, mod = "") {
+    const segments = [[]];
+    state.lessonNums.forEach((n, i) => {
+      if (i && gapBetween(state.lessonNums[i - 1], n) >= LONG_BREAK) segments.push([]);
+      segments.at(-1).push(n);
+    });
     return `<div class="strip${mod ? ` strip--${mod}` : ""}" role="tablist" aria-label="Дни недели">${days.map((d, i) => {
       const have = new Set(lessonsByNum(isoDate(d)).keys());
       const count = have.size;
-      // точки в два ряда: первая и вторая смена (граница — как в пересменке);
-      // на каждую пару сетки — точка, свободная пара — пустая
-      const row = (second) => `<span>${state.lessonNums
-        .filter((n) => isSecondShift(n) === second)
-        .map((n) => `<i${have.has(n) ? "" : ' class="is-empty"'}></i>`).join("")}</span>`;
+      // на каждую пару сетки — точка (свободная — пустая); ряды разделены теми же длинными перерывами, что и в расписании
+      const rows = segments.map((seg) => `<span>${seg.map((n) => `<i${have.has(n) ? "" : ' class="is-empty"'}></i>`).join("")}</span>`).join("");
       const active = i === state.dayIndex;
       return `<button class="strip__day${active ? " is-active" : ""}${isoDate(d) === isoDate(now) ? " is-today" : ""}" data-pick-day="${i}" role="tab" aria-selected="${active}"
           aria-label="${esc(`${WEEKDAYS_FULL[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}: ${count ? `${count} ${plural(count, ["пара", "пары", "пар"])}` : "пар нет"}`)}">
         <span class="strip__wd">${WEEKDAYS[d.getDay()]}</span>
         <span class="strip__num">${d.getDate()}</span>
-        <span class="strip__dots" aria-hidden="true">${row(false)}${row(true)}</span>
+        <span class="strip__dots" aria-hidden="true">${rows}</span>
       </button>`;
     }).join("")}</div>`;
   }
@@ -687,15 +693,17 @@
       const next = nextNum(byNum, date, now);
       const from = state.lessonNums.indexOf(present[0]), to = state.lessonNums.indexOf(present.at(-1));
       let rows = "";
-      let prevIsAfterShift = false;
+      let prevNum = null;
       for (const num of state.lessonNums.slice(from, to + 1)) {
         const bells = state.bells.get(num);
-        const isAfterShift = isSecondShift(num);
-        if (rows && isAfterShift && !prevIsAfterShift) rows += '<li class="tl-row tl-row--shift"><span></span><span class="tl-rail"></span><div class="shift-divider" role="separator">пересменка</div></li>';
-        prevIsAfterShift = isAfterShift;
-
         const lessons = byNum.get(num);
         const time = lessons ? lessons[0] : bells; // у пары может быть своё время, отличное от общей сетки звонков
+        if (prevNum !== null) {
+          const prevTime = byNum.get(prevNum)?.[0] || state.bells.get(prevNum);
+          const gap = prevTime && time ? toMin(time.timeStart) - toMin(prevTime.timeEnd) : gapBetween(prevNum, num);
+          if (gap >= LONG_BREAK) rows += `<li class="tl-row tl-row--shift"><span></span><span class="tl-rail"></span>${breakDividerHTML(gap)}</li>`;
+        }
+        prevNum = num;
         const t = time && timing(time, date, now);
         const rowCls = ["tl-row", !lessons && "tl-row--window", t && `is-${t.kind}`].filter(Boolean).join(" ");
         rows += `<li class="${rowCls}">
@@ -886,7 +894,42 @@
     }
     state.bells = map;
     state.lessonNums = [...map.keys()].sort((a, b) => a - b);
+    state.breaks = computeBreaks([...state.lessons, ...state.divisionLessons]);
   }
+
+  // Типичный перерыв после каждой пары: для каждого корпуса берём самое частое время пары,
+  // считаем разрыв до следующей и берём медиану по корпусам (в разных корпусах пары идут в разное время)
+  function computeBreaks(lessons) {
+    const byDiv = new Map();
+    for (const l of lessons) {
+      const div = l.division?.name || "";
+      if (!byDiv.has(div)) byDiv.set(div, new Map());
+      const byNum = byDiv.get(div);
+      if (!byNum.has(l.lessonNumber)) byNum.set(l.lessonNumber, new Map());
+      const counts = byNum.get(l.lessonNumber), t = `${l.timeStart}-${l.timeEnd}`;
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+    const top = (counts) => [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0].split("-");
+    const gaps = new Map();
+    for (const byNum of byDiv.values()) {
+      for (const n of byNum.keys()) {
+        if (!byNum.has(n + 1)) continue;
+        const g = toMin(top(byNum.get(n + 1))[0]) - toMin(top(byNum.get(n))[1]);
+        if (!gaps.has(n)) gaps.set(n, []);
+        gaps.get(n).push(g);
+      }
+    }
+    const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+    return new Map([...gaps].map(([n, a]) => [n, median(a)]));
+  }
+
+  // Перерыв между парами prev и num (мин) для общей сетки недели
+  function gapBetween(prev, num) {
+    if (num === prev + 1 && state.breaks.has(prev)) return state.breaks.get(prev);
+    const a = state.bells.get(prev), b = state.bells.get(num);
+    return a && b ? toMin(b.timeStart) - toMin(a.timeEnd) : 0;
+  }
+  const breakDividerHTML = (min) => `<div class="shift-divider" role="separator">Перерыв ${fmtDuration(min)}</div>`;
 
   let weekToken = 0;
   async function refreshWeek() {
