@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Мой Сиелом — стенд</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="fonts.css">
+  <style>
+    :root {
+      --bg: #ececE8; --panel: #fff; --surface: #f3f3f0; --line: #e3e3de; --text: #1b1b19; --muted: #74746d;
+      --accent: #ffe16c; --accent-ink: #33332f; --accent-strong: #f5c518;
+      --font: "Wix Madefor Display", "Inter", system-ui, sans-serif; --font-ui: "Inter", system-ui, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0c0c0b; --panel: #1b1b19; --surface: #242421; --line: #2f2f2c; --text: #ededE7; --muted: #92928a; }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { background: var(--bg); color: var(--text); font: 14px/1.45 var(--font-ui); display: grid; grid-template-columns: 340px 1fr; }
+    button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+
+    .panel { height: 100%; overflow: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 18px 18px 28px; display: flex; flex-direction: column; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 10px; font: 800 17px var(--font); }
+    .brand img { width: 34px; height: 34px; border-radius: 9px; }
+    .brand small { display: block; font: 500 12px var(--font-ui); color: var(--muted); }
+    .sec h3 { margin: 0 0 8px; font: 700 11px var(--font-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface); font-weight: 600; font-size: 13px; transition: background .15s; }
+    .chip:hover { background: var(--line); }
+    .chip.on { background: var(--accent); color: var(--accent-ink); }
+    .chip.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+    .clock { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+    .clock b { font: 800 40px/1 var(--font); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+    .clock span { color: var(--muted); font-size: 13px; }
+    input[type=range] { width: 100%; accent-color: var(--accent-strong); margin: 6px 0 10px; }
+    .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px; }
+    .day { display: flex; flex-direction: column; align-items: center; padding: 6px 0 5px; border-radius: 12px; background: var(--surface); font-size: 11px; color: var(--muted); }
+    .day b { font: 800 15px var(--font); color: var(--text); }
+    .day.on { background: var(--accent); color: var(--accent-ink); }
+    .day.on b { color: var(--accent-ink); }
+    .play { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .play .go { width: 36px; height: 36px; border-radius: 50%; background: var(--text); color: var(--panel); display: grid; place-items: center; font-size: 13px; flex: none; }
+    label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; cursor: pointer; }
+    .hint { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+    .stage { min-width: 0; height: 100%; display: grid; place-items: center; padding: 20px; overflow: hidden; }
+    .holder { position: relative; flex: none; }
+    .device { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #000; box-shadow: 0 30px 70px rgba(0,0,0,.35), 0 0 0 1px rgba(128,128,128,.3); overflow: hidden; }
+    .device.phone { border-radius: 46px; padding: 10px; }
+    .device.phone::after { content: ""; position: absolute; top: 14px; left: 50%; width: 110px; height: 28px; margin-left: -55px; border-radius: 16px; background: #000; z-index: 2; }
+    .device.tablet { border-radius: 26px; padding: 12px; }
+    .device.laptop { border-radius: 12px; padding: 0; }
+    iframe { display: block; border: 0; background: #fff; }
+    .phone iframe { border-radius: 36px; }
+    .tablet iframe { border-radius: 16px; }
+    .meta { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 12px; color: var(--muted); pointer-events: none; }
+    @media (max-width: 860px) {
+      body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
+      .panel { height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .stage { height: 80vh; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="panel">
+    <div class="brand"><img src="assets/icon.svg" alt=""><div>Стенд<small>Мой Сиелом · проверка состояний</small></div></div>
+
+    <section class="sec">
+      <h3>Время</h3>
+      <div class="clock"><b id="clock">--:--</b><span id="clockDate"></span></div>
+      <input type="range" id="slider" min="0" max="1439" step="1" aria-label="Время суток">
+      <div class="days" id="days"></div>
+      <div class="row" id="presets"></div>
+      <div class="play">
+        <button class="go" id="play" aria-label="Запустить ход времени">▶</button>
+        <div class="row" id="speeds"></div>
+        <button class="chip sm" id="real" style="margin-left:auto">Сейчас</button>
+      </div>
+      <p class="hint">Приложение обновляется раз в минуту, а стенд сразу при каждом сдвиге ползунка.</p>
+    </section>
+
+    <section class="sec">
+      <h3>Экран</h3>
+      <div class="row" id="devices"></div>
+    </section>
+
+    <section class="sec">
+      <h3>Тема и вид</h3>
+      <div class="row" id="themes" style="margin-bottom:8px"></div>
+      <div class="row" id="views"></div>
+    </section>
+
+    <section class="sec">
+      <h3>Что показать</h3>
+      <div class="row" id="subjects"></div>
+      <p class="hint">Преподавателей, кабинеты и другие группы можно выбрать в самом приложении.</p>
+    </section>
+
+    <section class="sec">
+      <h3>Данные</h3>
+      <div class="row" id="modes"></div>
+      <label class="check"><input type="checkbox" id="note"> Примечание у 4 пары</label>
+    </section>
+
+    <section class="sec"><button class="chip" id="reload">Перезагрузить приложение</button></section>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="holder" id="holder">
+      <div class="device" id="device"><iframe id="frame" title="Приложение"></iframe></div>
+      <div class="meta" id="meta"></div>
+    </div>
+  </main>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const pad = (n) => String(n).padStart(2, "0");
+  const DAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  const real = new Date();
+  const monday = new Date(real); monday.setHours(0, 0, 0, 0); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+
+  const BUILDING = { kind: "building", id: "2b807ff8-81a9-11f0-9fba-e029e7085e0b", title: "№7 Пролетарский 3", divisionId: "2b807ff8-81a9-11f0-9fba-e029e7085e0b" };
+  const DEVICES = { phone: ["Телефон", 390, 844, "phone"], tablet: ["Планшет", 820, 1100, "tablet"], laptop: ["Ноутбук", 1280, 800, "laptop"], wide: ["Широкий", 1680, 940, "laptop"] };
+  const PRESETS = [["Перед парами", 7 * 60 + 55], ["Идёт 1 пара", 9 * 60 + 10], ["Перемена", 9 * 60 + 55], ["Между сменами", 13 * 60 + 20], ["Идёт 4 пара", 14 * 60 + 22], ["Конец пары", 14 * 60 + 55], ["Вечер", 18 * 60 + 40], ["Ночь", 23 * 60 + 30]];
+  const SPEEDS = [["1 мин/с", 1], ["5 мин/с", 5], ["20 мин/с", 20]];
+  const MODES = [["ok", "Обычные"], ["loading", "Загрузка"], ["error", "Ошибка сети"], ["unpublished", "Не опубликовано"], ["empty", "Пар нет"]];
+
+  // состояние стенда; приложение внутри читает его через window.parent.__demo
+  const S = window.__demo = {
+    day: (real.getDay() + 6) % 7, min: real.getHours() * 60 + real.getMinutes(),
+    mode: "ok", note: false, theme: "system", view: matchMedia("(max-width: 700px)").matches ? "day" : "week",
+    subject: "group", device: matchMedia("(max-width: 860px)").matches ? "phone" : "laptop", speed: 5, playing: false,
+    get now() { const d = new Date(monday); d.setDate(d.getDate() + this.day); d.setHours(0, this.min, 0, 0); return d.getTime(); },
+  };
+  if (S.day > 5) S.day = 5;
+
+  const frame = $("#frame");
+  const doc = () => frame.contentDocument;
+  const fmt = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+  const tick = () => { try { doc().dispatchEvent(new Event("sielom:tick")); } catch {} };
+
+  // ---------- элементы управления ----------
+  function chips(box, items, current, onPick, cls = "") {
+    box.innerHTML = items.map(([k, label]) => `<button class="chip ${cls}${String(k) === String(current) ? " on" : ""}" data-k="${k}">${label}</button>`).join("");
+    box.onclick = (e) => { const b = e.target.closest("[data-k]"); if (b) onPick(b.dataset.k); };
+  }
+  function renderControls() {
+    $("#days").innerHTML = DAYS.map((d, i) => {
+      const dt = new Date(monday); dt.setDate(dt.getDate() + i);
+      return `<button class="day${S.day === i ? " on" : ""}" data-i="${i}">${d}<b>${dt.getDate()}</b></button>`;
+    }).join("");
+    $("#days").onclick = (e) => { const b = e.target.closest("[data-i]"); if (!b) return; S.day = Number(b.dataset.i); renderControls(); renderClock(); load(); };
+    chips($("#presets"), PRESETS.map(([l, m]) => [m, l]), S.min, (m) => { S.min = Number(m); renderControls(); renderClock(); tick(); }, "sm");
+    chips($("#speeds"), SPEEDS.map(([l, v]) => [v, l]), S.speed, (v) => { S.speed = Number(v); renderControls(); }, "sm");
+    chips($("#devices"), Object.entries(DEVICES).map(([k, v]) => [k, v[0]]), S.device, (k) => { S.device = k; renderControls(); load(); });
+    chips($("#themes"), [["system", "Системная"], ["light", "Светлая"], ["dark", "Тёмная"]], S.theme, (k) => { S.theme = k; renderControls(); applyTheme(); });
+    chips($("#views"), [["week", "Неделя"], ["day", "День"]], S.view, (k) => { S.view = k; renderControls(); applyView(); });
+    chips($("#subjects"), [["group", "Группа ИС-23/9-2"], ["building", "Весь корпус №7"]], S.subject, (k) => { S.subject = k; renderControls(); load(); });
+    chips($("#modes"), MODES, S.mode, (k) => { S.mode = k; renderControls(); load(); });
+    $("#note").checked = S.note;
+    $("#play").textContent = S.playing ? "❚❚" : "▶";
+  }
+  function renderClock() {
+    $("#clock").textContent = fmt(S.min);
+    $("#slider").value = S.min;
+    const d = new Date(S.now);
+    $("#clockDate").textContent = `${DAYS[S.day]}, ${d.getDate()}.${pad(d.getMonth() + 1)}`;
+  }
+  $("#slider").addEventListener("input", (e) => { S.min = Number(e.target.value); renderClock(); document.querySelectorAll("#presets .chip").forEach((c) => c.classList.toggle("on", Number(c.dataset.k) === S.min)); tick(); });
+  $("#note").addEventListener("change", (e) => { S.note = e.target.checked; load(); });
+  $("#reload").addEventListener("click", () => load());
+  $("#real").addEventListener("click", () => { S.day = Math.min((real.getDay() + 6) % 7, 5); S.min = new Date().getHours() * 60 + new Date().getMinutes(); renderControls(); renderClock(); load(); });
+
+  // ход времени
+  let timer = null;
+  $("#play").addEventListener("click", () => {
+    S.playing = !S.playing;
+    clearInterval(timer);
+    if (S.playing) {
+      let last = performance.now();
+      timer = setInterval(() => {
+        const t = performance.now(), dt = (t - last) / 1000; last = t;
+        S.min = Math.min(1439, S.min + S.speed * dt);
+        renderClock(); tick();
+        if (S.min >= 1439) { S.playing = false; clearInterval(timer); renderControls(); }
+      }, 250);
+    }
+    renderControls();
+  });
+  function applyTheme() {
+    const el = doc()?.documentElement;
+    if (!el) return;
+    S.theme === "system" ? el.removeAttribute("data-theme") : (el.dataset.theme = S.theme);
+    try { doc().dispatchEvent(new Event("sielom:tick")); } catch {}
+  }
+  function applyView() {
+    const b = doc()?.querySelector(`#viewSwitch:not([hidden]) [data-view="${S.view}"]`);
+    b?.click();
+  }
+
+  // ---------- устройство и масштаб ----------
+  function fit() {
+    const [, w, h, kind] = DEVICES[S.device];
+    const pad = kind === "phone" ? 20 : kind === "tablet" ? 24 : 0;
+    const W = w + pad, H = h + pad;
+    const st = $("#stage").getBoundingClientRect();
+    const k = Math.min(1, (st.width - 40) / W, (st.height - 56) / H);
+    const dev = $("#device");
+    dev.className = `device ${kind}`;
+    dev.style.width = `${W}px`; dev.style.height = `${H}px`;
+    dev.style.transform = `scale(${k})`;
+    frame.style.width = `${w}px`; frame.style.height = `${h}px`;
+    const holder = $("#holder");
+    holder.style.width = `${W * k}px`; holder.style.height = `${H * k + 24}px`;
+    $("#meta").textContent = `${DEVICES[S.device][0]} · ${w}×${h}${k < 1 ? ` · масштаб ${Math.round(k * 100)}%` : ""}`;
+  }
+  addEventListener("resize", fit);
+
+  // ---------- загрузка приложения внутрь рамки ----------
+  async function load() {
+    fit();
+    const [, , , kind] = DEVICES[S.device];
+    const [html0, css0] = await Promise.all([fetch("index.html").then((r) => r.text()), fetch("styles.css").then((r) => r.text())]);
+    // на телефоне подставляем безопасные зоны, как у настоящего устройства
+    const css = kind === "phone"
+      ? css0.replace(/env\(safe-area-inset-top\)/g, "47px").replace(/env\(safe-area-inset-bottom\)/g, "34px").replace(/env\(safe-area-inset-(left|right)\)/g, "0px")
+      : css0;
+    const patch = `<base href="${location.origin}${location.pathname.replace(/[^/]*$/, "")}"><script>
+      (() => {
+        const P = window.parent.__demo, RD = Date;
+        class FD extends RD { constructor(...a) { if (a.length === 0) super(P.now); else super(...a); } static now() { return P.now; } }
+        window.Date = FD;
+        const mem = {};
+        if (P.theme !== "system") mem["sielom.theme"] = JSON.stringify(P.theme);
+        mem["sielom.view"] = JSON.stringify(P.view);
+        if (P.subject === "building") mem["sielom.selection"] = ${JSON.stringify(JSON.stringify(BUILDING))};
+        Storage.prototype.getItem = function (k) { return k in mem ? mem[k] : null; };
+        Storage.prototype.setItem = function (k, v) { mem[k] = String(v); };
+        Storage.prototype.removeItem = function (k) { delete mem[k]; };
+        const _f = window.fetch.bind(window);
+        const json = (d) => new Response(JSON.stringify(d), { headers: { "content-type": "application/json" } });
+        const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        window.fetch = async (u, ...a) => {
+          const url = String(u), m = P.mode;
+          if (/\\/(lessons|weeks)\\b/.test(url)) {
+            if (m === "error") throw new TypeError("Failed to fetch");
+            if (m === "loading") await new Promise(() => {});
+            if (m === "unpublished" && /\\/weeks\\//.test(url)) return json([]);
+          }
+          const r = await _f(u, ...a);
+          if (/\\/lessons\\//.test(url)) {
+            if (m === "empty") return json([]);
+            if (P.note) {
+              const d = await r.clone().json(), today = iso(new Date());
+              d.forEach((l) => { if (l.date === today && l.lessonNumber === 4) l.note = "Замена: пара перенесена из ауд. 115 в ауд. 208"; });
+              return json(d);
+            }
+          }
+          return r;
+        };
+      })();
+    <\/script>`;
+    const html = html0.replace("<head>", "<head>" + patch).replace(/<link rel="stylesheet" href="styles\.css[^"]*">/, "<style>" + css.replace(/<\//g, "<\\/") + "</style>");
+    frame.onload = () => { applyTheme(); };
+    frame.srcdoc = html;
+  }
+
+  renderControls(); renderClock(); load();
+})();
+</script>
+</body>
+</html>

@@ -1080,7 +1080,13 @@ svg { flex-shrink: 0; }
 }
 .bhead__in b { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
 .bhead__in > span { font: 500 12px var(--font-ui); color: var(--c-muted); font-variant-numeric: tabular-nums; }
-.bhead.is-now .bhead__in { background: var(--c-accent); color: var(--c-on-accent); }
+/* идущая пара: подсвечена вся колонка (плашка позади сетки), а прогресс — полосой на заголовке */
+.bgrid { position: relative; }
+.bcol-now { position: absolute; top: 0; bottom: 0; border-radius: var(--r-xl); background: var(--c-accent-tint); pointer-events: none; }
+.bhead.is-now { background: var(--c-accent-tint); box-shadow: -3px 0 0 var(--c-accent-tint), 3px 0 0 var(--c-accent-tint); border-radius: var(--r-xl) var(--r-xl) 0 0; }
+.bhead.is-now .bhead__in { position: relative; overflow: hidden; background: var(--c-accent); color: var(--c-on-accent); }
+.bhead.is-now .bhead__in::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: color-mix(in srgb, var(--c-on-accent) 18%, transparent); }
+.bhead.is-now .bhead__in::after { content: ""; position: absolute; left: 0; bottom: 0; width: var(--progress, 0%); height: 4px; background: var(--c-on-accent); border-radius: 0 3px 3px 0; }
 .bhead.is-now .bhead__in > span { color: var(--c-on-accent); }
 .bhead.is-now .chip--live { background: var(--c-on-accent); color: var(--c-accent); }
 .bhead.is-now .chip--live::before { background: var(--c-accent); }
@@ -1107,15 +1113,15 @@ svg { flex-shrink: 0; }
 .broom.is-free button { box-shadow: inset 0 0 0 1.5px var(--c-free-line); }
 .bcell {
   position: relative; min-height: 72px; min-width: 0;
-  display: flex; flex-direction: column; gap: 4px;
-  padding: 8px 10px 9px;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 12px 12px;
   border-radius: var(--r-lg); background: var(--c-surface);
   cursor: pointer; overflow: hidden;
   transition: background var(--dur), box-shadow var(--dur), opacity var(--dur), transform .12s;
 }
 .bcell:hover { background: var(--c-bg); box-shadow: var(--sh-sm); }
 .bcell:active { transform: scale(.985); }
-.bcell__subj { font-size: 13px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bcell__subj { font-size: 14.5px; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .bcell__meta { margin-top: auto; padding-top: 4px; display: flex; flex-direction: column; gap: 3px; min-width: 0; font: 500 12px var(--font-ui); color: var(--c-muted); }
 .bcell__grp {
   height: 20px; padding: 0 7px; flex-shrink: 0;
@@ -1126,11 +1132,13 @@ svg { flex-shrink: 0; }
 .bcell__more { flex-shrink: 0; font: 600 11px var(--font-ui); color: var(--c-muted); }
 .bcell__who { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bcell .lesson__note { position: absolute; top: 8px; right: 8px; }
-.bcell.is-now { background: var(--c-bg); box-shadow: 0 0 0 2px var(--c-accent-strong), var(--sh-sm); }
-.bcell.is-now::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--c-line); }
-.bcell.is-now::after { content: ""; position: absolute; left: 0; bottom: 0; width: var(--progress, 0%); height: 4px; background: var(--c-accent-strong); border-radius: 0 3px 3px 0; }
-.bcell.is-past { opacity: .5; }
-.bcell.is-past .bcell__subj { text-decoration: line-through; text-decoration-color: var(--c-faint); }
+/* как карточки недели: в колонке идущей пары — светлая карточка на тёплой плашке, прошедшие — приглушены и зачёркнуты */
+.bcell.is-now { background: var(--c-bg); box-shadow: var(--sh-xs); }
+.bcell.is-now:hover { box-shadow: var(--sh-sm); }
+.bcell.is-past { opacity: .7; }
+.bcell.is-past:hover { opacity: 1; }
+.bcell.is-past .bcell__subj { text-decoration: line-through; text-decoration-color: var(--c-text-2); text-decoration-thickness: 2px; color: var(--c-text-2); }
+.bcell.is-past::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c-line-strong); }
 .bfree {
   min-height: 72px; display: grid; place-items: center;
   border: 1.5px dashed var(--c-line-strong); border-radius: var(--r-lg);
@@ -1228,6 +1236,21 @@ svg { flex-shrink: 0; }
   .bfind { width: 170px; }
 }
 .app.is-building .pager { display: none; }
+/* шапка корпуса на десктопе: слева вид («Все кабинеты / Свободные») и сводка, справа фильтры */
+@media (min-width: 901px) {
+  .bbar__tools { display: contents; }
+  .bswitch { order: -2; }
+  .bsummary { order: -1; margin-left: 4px; }
+  .bfind { margin-left: auto; }
+}
+.head-strip:not([hidden]) { display: flex; align-items: center; gap: 6px; }
+.head-strip__arrow {
+  width: 32px; height: 32px; flex-shrink: 0;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--c-surface); color: var(--c-text-2);
+  transition: background var(--dur), color var(--dur);
+}
+.head-strip__arrow:hover { background: var(--c-surface-2); color: var(--c-text); }
 .head-strip .strip.strip--bar { grid-template-columns: repeat(6, 50px); }
 .head-strip .strip--bar .strip__day { padding: 5px 4px 4px; }
 @media (min-width: 901px) {

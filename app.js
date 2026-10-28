@@ -881,7 +881,7 @@
     let html = `<div class="bhead bhead--corner"><span class="bhead__in">Кабинет</span></div>`;
     for (const b of B.bells) {
       const t = timing(b, date, now);
-      html += `<div class="bhead${t?.kind === "now" ? " is-now" : t?.kind === "past" ? " is-past" : ""}"><span class="bhead__in">
+      html += `<div class="bhead${t?.kind === "now" ? " is-now" : t?.kind === "past" ? " is-past" : ""}"${t?.kind === "now" ? ` style="--progress:${t.progress}%"` : ""}><span class="bhead__in">
         <b>${b.num} пара${t?.kind === "now" ? ' <span class="chip chip--live chip--xs">идёт</span>' : ""}</b>
         <span>${esc(b.timeStart)} – ${esc(b.timeEnd)}</span></span></div>`;
     }
@@ -905,7 +905,7 @@
       }
       html += `</div>`;
     }
-    return `<div class="bscroll"><div class="bgrid" style="--cols:${B.bells.length}">${html}</div></div>`;
+    return `<div class="bscroll"><div class="bgrid" style="--cols:${B.bells.length}">${B.nowBell ? '<div class="bcol-now" aria-hidden="true"></div>' : ""}${html}</div></div>`;
   }
 
   function pairPickerHTML(date, now, B) {
@@ -933,6 +933,14 @@
       const items = [...box.children];
       items.forEach((el, i) => el.classList.toggle("no-sep", i < items.length - 1 && items[i + 1].offsetTop > el.offsetTop + 2));
     });
+  }
+
+  // плашка идущей пары позади сетки: по ширине колонки заголовка, с небольшим выступом по бокам
+  function placeNowColumn() {
+    const col = $("#week .bcol-now"), head = $("#week .bhead.is-now");
+    if (!col || !head) return;
+    col.style.left = `${head.offsetLeft - 3}px`;
+    col.style.width = `${head.offsetWidth + 6}px`;
   }
 
   function buildingFreeHTML(date, now, B) {
@@ -982,24 +990,20 @@
     return `${pairPickerHTML(date, now, B)}<div class="bscroll blist">${html}</div>`;
   }
 
+  // сводка: нагруженность на выбранной паре — идущей сейчас, иначе ближайшей (или выбранной вручную)
   function buildingSummaryHTML(date, now, B) {
-    if (B.nowBell) {
-      const left = toMin(B.nowBell.timeEnd) - nowMin(now);
-      const free = B.rooms.filter((c) => !B.at(c, B.nowBell.num)).length;
-      return `<span class="chip chip--live">${B.nowBell.num} пара · ещё ${fmtDuration(left)}</span>
-        <span class="chip chip--free">Свободно ${free} из ${B.rooms.length}</span>`;
-    }
     if (!B.bells.length) return `<span class="bsummary__text">Пар нет</span>`;
-    const total = new Set([...B.slots.values()].flat().map((l) => l.id)).size;
-    const first = B.bells[0], last = B.bells.at(-1);
-    let label = `${total} ${plural(total, ["пара", "пары", "пар"])} · ${first.timeStart}–${last.timeEnd}`;
-    if (isoDate(date) === isoDate(now)) {
-      const cur = nowMin(now);
-      if (cur < toMin(first.timeStart)) label = `Пары начнутся в ${first.timeStart}`;
-      else if (cur > toMin(last.timeEnd)) label = "Пары на сегодня закончились";
-      else label = `Перемена · ${B.pick ? `${B.pick.num} пара в ${B.pick.timeStart}` : ""}`;
-    }
-    return `<span class="bsummary__text">${esc(label)}</span>`;
+    const today = isoDate(date) === isoDate(now);
+    if (today && nowMin(now) > toMin(B.bells.at(-1).timeEnd)) return `<span class="bsummary__text">Пары на сегодня закончились</span>`;
+    const p = B.pick;
+    if (!p) return "";
+    const free = B.rooms.filter((c) => !B.at(c, p.num)).length;
+    const t = timing(p, date, now);
+    let lead;
+    if (t?.kind === "now") lead = `<span class="chip chip--live">${p.num} пара · ещё ${fmtDuration(toMin(p.timeEnd) - nowMin(now))}</span>`;
+    else if (today && t?.kind === "soon" && state.building.pair === null) lead = `<span class="bsummary__text">Следующая · ${p.num} пара в ${esc(p.timeStart)}</span>`;
+    else lead = `<span class="bsummary__text">${p.num} пара · ${esc(p.timeStart)}–${esc(p.timeEnd)}</span>`;
+    return `${lead}<span class="chip chip--free">Свободно ${free} из ${B.rooms.length}</span>`;
   }
 
   function buildingHTML(days, now) {
@@ -1099,6 +1103,8 @@
     week.removeAttribute("data-anim");
     week.style.gridTemplateColumns = "";
     $("#headStrip").hidden = true;
+    // с данными корпуса дни и недели переключаются своими элементами, пейджер не нужен; в состояниях «загрузка / не опубликовано» он остаётся
+    $("#app").classList.remove("is-building");
     renderTodayBtn();
 
     const now = new Date();
@@ -1139,11 +1145,13 @@
       week.className = "week is-building";
       week.innerHTML = buildingHTML(days, now);
       // на десктопе дни выбираются в шапке, на месте пейджера; на телефоне полоса остаётся внизу экрана
+      $("#app").classList.add("is-building");
       const headStrip = $("#headStrip");
       headStrip.hidden = mobileMQ.matches;
-      headStrip.innerHTML = mobileMQ.matches ? "" : stripHTML(days, now, "bar");
+      headStrip.innerHTML = mobileMQ.matches ? "" : `<button class="head-strip__arrow" data-week-step="-1" aria-label="Предыдущая неделя" title="Предыдущая неделя"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>${stripHTML(days, now, "bar")}<button class="head-strip__arrow" data-week-step="1" aria-label="Следующая неделя" title="Следующая неделя"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
       applyBuildingFilters();
       trimGroupSeparators();
+      placeNowColumn();
       // выбранная пара должна быть видна в горизонтальной ленте пар
       const bp = week.querySelector(".bpair.is-active");
       if (bp) { const strip = bp.parentElement; strip.scrollLeft = bp.offsetLeft - (strip.clientWidth - bp.offsetWidth) / 2; }
@@ -1246,7 +1254,6 @@
     });
     // у «Всего корпуса» свой переключатель вида внутри экрана, а листается он по дням
     $("#viewSwitch").hidden = isBuilding();
-    $("#app").classList.toggle("is-building", isBuilding()); // в корпусе дни выбираются полосой в самом экране, пейджер не нужен
     $$(".segmented").forEach(syncThumb);
     $("#favFilter").setAttribute("aria-pressed", state.onlyFav);
     $("#prevWeek").setAttribute("aria-label", dayNav() ? "Предыдущий день" : "Предыдущая неделя");
@@ -1593,11 +1600,20 @@
     state.building.pair = null;
     renderWeek();
   }
+  // «Весь корпус»: неделя целиком, день внутри неё сохраняется
+  function stepWeek(dir) {
+    navDir = dir;
+    state.weekOffset += dir;
+    state.building.pair = null;
+    refreshWeek();
+  }
   $("#headStrip").addEventListener("click", (e) => {
+    const stepBtn = e.target.closest("[data-week-step]");
+    if (stepBtn) { stepWeek(Number(stepBtn.dataset.weekStep)); return; }
     const pick = e.target.closest("[data-pick-day]");
     if (pick) pickDay(Number(pick.dataset.pickDay));
   });
-  window.addEventListener("resize", () => { if (isBuilding()) trimGroupSeparators(); });
+  window.addEventListener("resize", () => { if (isBuilding()) { trimGroupSeparators(); placeNowColumn(); } });
   mobileMQ.addEventListener("change", () => { if (isBuilding() && state.week) renderWeek({ keepScroll: true }); });
 
   $("#week").addEventListener("click", (e) => {
@@ -1866,6 +1882,12 @@
     let sx = 0, sy = 0;
     $("#week").addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
     $("#week").addEventListener("touchend", (e) => {
+      // свайп по полосе дней в корпусе листает недели
+      if (isBuilding() && e.target.closest(".strip--bar")) {
+        const sdx = e.changedTouches[0].clientX - sx, sdy = e.changedTouches[0].clientY - sy;
+        if (Math.abs(sdx) > 50 && Math.abs(sdx) > Math.abs(sdy) * 1.5) stepWeek(sdx < 0 ? 1 : -1);
+        return;
+      }
       // в широкой шахматке горизонтальный свайп прокручивает кабинеты, а не дни; в узком виде корпуса свайп листает пары
       if (isBuilding() ? !narrowMQ.matches : state.view !== "day") return;
       if (e.target.closest(".bpairs")) return;
@@ -1882,9 +1904,11 @@
   }
 
   // Раз в минуту обновляем «идёт сейчас» и свёрнутые прошедшие пары
-  setInterval(() => {
+  const refreshNow = () => {
     if (!state.loadingWeek && !state.error && state.week && !$("#lessonModal").open) renderWeek({ keepScroll: true });
-  }, 60 * 1000);
+  };
+  setInterval(refreshNow, 60 * 1000);
+  document.addEventListener("sielom:tick", refreshNow); // для демо-стенда (demo.html): сдвиг времени без ожидания минуты
 
   // ---------- Старт ----------
   (async () => {
