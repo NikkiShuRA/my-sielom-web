@@ -14,6 +14,8 @@
   // Между парами показываем длинный перерыв (от 25 мин) разделителем «Перерыв N мин». Он берётся из самих данных,
   // поэтому не зависит от того, как называть смены и каким бывает график звонков в корпусе
   const LONG_BREAK = 25;
+  // В режиме «День» подписываем и обычные перемены (от 5 мин): строк мало, и видно, сколько отдыхать между парами
+  const SHOW_BREAK = 5;
   const EMPLOYEE_CACHE_KEY = "sielom.employees.v1";
   const EMPLOYEE_CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -701,12 +703,18 @@
         if (prevNum !== null) {
           const prevTime = byNum.get(prevNum)?.[0] || state.bells.get(prevNum);
           const gap = prevTime && time ? toMin(time.timeStart) - toMin(prevTime.timeEnd) : gapBetween(prevNum, num);
-          if (gap >= LONG_BREAK) rows += `<li class="tl-row tl-row--shift"><span></span><span class="tl-rail"></span>${breakDividerHTML(gap)}</li>`;
+          if (gap >= SHOW_BREAK) {
+            // перерыв — тоже «момент» на линии: ещё не начался / идёт / прошёл, со своей точкой и прогрессом
+            const bt = prevTime && time ? timing({ timeStart: prevTime.timeEnd, timeEnd: time.timeStart }, date, now) : null;
+            const bp = bt?.kind === "now" ? ` style="--p:${bt.progress / 100}"` : "";
+            rows += `<li class="tl-row tl-row--shift${bt ? ` is-${bt.kind}` : ""}"${bp}><span></span><span class="tl-rail"><span class="tl-dot tl-dot--break"></span></span>${breakDividerHTML(gap)}</li>`;
+          }
         }
         prevNum = num;
         const t = time && timing(time, date, now);
         const rowCls = ["tl-row", !lessons && "tl-row--window", t && `is-${t.kind}`].filter(Boolean).join(" ");
-        rows += `<li class="${rowCls}">
+        const rp = t?.kind === "now" ? ` style="--p:${t.progress / 100}"` : "";
+        rows += `<li class="${rowCls}"${rp}>
           <div class="tl-time">
             <span class="tl-start">${esc(time?.timeStart || "")}</span>
             <span class="tl-end">${esc(time?.timeEnd || "")}</span>
@@ -779,6 +787,7 @@
     const week = $("#week");
     const scroll = [week.scrollLeft, week.scrollTop];
     week.removeAttribute("data-anim");
+    week.style.gridTemplateColumns = "";
     renderTodayBtn();
 
     const now = new Date();
@@ -820,6 +829,9 @@
     } else {
       week.className = "week";
       week.innerHTML = days.map((d, i) => dayColumnHTML(d, i, now)).join("");
+      // колонка с чипом («Идёт · ещё N мин», «Через N мин») шире остальных, чтобы плашка помещалась целиком
+      const cols = [...week.querySelectorAll(":scope > .day")].map((d) => d.querySelector(".lesson__meta .chip") ? "minmax(330px, 360px)" : "minmax(var(--day-w), 320px)");
+      if (cols.some((c) => c.startsWith("minmax(330"))) week.style.gridTemplateColumns = cols.join(" ");
     }
 
     if (navDir) { void week.offsetWidth; week.dataset.anim = navDir > 0 ? "next" : "prev"; navDir = 0; }

@@ -863,16 +863,22 @@ svg { flex-shrink: 0; }
 .tl-row:first-child .tl-rail::before { top: 32px; }
 .tl-row:last-child .tl-rail::before { bottom: auto; height: 32px; }
 .tl-row:first-child:last-child .tl-rail::before { display: none; }
-.tl-row.is-past .tl-rail::before { background: var(--c-line-strong); }
+/* Прогресс дня: пройденная часть линии и точки — жёлтые, текущая пара заполняет линию по ходу пары, остальное серое */
+.tl-row.is-past .tl-rail::before { background: var(--c-accent-strong); }
+.tl-row.is-now .tl-rail::before { background: linear-gradient(var(--c-accent-strong) calc(36px + (100% - 36px) * var(--p, 0)), var(--c-line) 0); }
 .tl-dot {
   position: relative; z-index: 1;
   width: 12px; height: 12px; margin-top: 30px;
   border-radius: 50%;
   background: var(--c-bg); box-shadow: inset 0 0 0 2px var(--c-line-strong);
 }
-.tl-row.is-past .tl-dot { background: var(--c-line-strong); box-shadow: none; }
+.tl-row.is-past .tl-dot { background: var(--c-accent-strong); box-shadow: none; }
 .tl-row.is-now .tl-dot { background: var(--c-accent-strong); box-shadow: 0 0 0 5px rgba(242, 194, 0, .25); }
 .tl-row--window .tl-dot { width: 8px; height: 8px; margin-top: 20px; }
+/* Точка перерыва: меньше обычной, на одном уровне с подписью «Перерыв N мин» */
+.tl-dot--break { width: 8px; height: 8px; margin-top: 3px; }
+.tl-row--shift.is-now .tl-dot--break { box-shadow: 0 0 0 4px rgba(242, 194, 0, .25); }
+.tl-row--shift.is-now .tl-rail::before { background: linear-gradient(var(--c-accent-strong) calc(7px + (100% - 7px) * var(--p, 0)), var(--c-line) 0); }
 .tl-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .tl-num { padding-left: 4px; font: 600 11px var(--font-ui); color: var(--c-muted); text-transform: uppercase; letter-spacing: .05em; }
 .tl-row.is-now .tl-num { color: var(--c-accent-ink); }
@@ -999,7 +1005,11 @@ svg { flex-shrink: 0; }
 
 @media (max-width: 900px) {
   /* снизу — место под панель навигации (пейджер + режим) */
-  .app { padding: 8px 8px calc(8px + 44px + 8px + env(safe-area-inset-bottom)); gap: 8px; }
+  /* безопасные зоны: статус-бар сверху, жестовая полоса снизу, вырезы по бокам в ландшафте */
+  .app {
+    padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + 44px + 8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
+    gap: 8px;
+  }
 
   /* Шапка: [меню+лого | название | сегодня]; пейджер и режим — в нижней панели */
   .app__head {
@@ -1019,7 +1029,7 @@ svg { flex-shrink: 0; }
   .toolbar__nav {
     display: flex; align-items: center; gap: 8px;
     position: fixed; z-index: 30;
-    left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+    left: calc(8px + env(safe-area-inset-left)); right: calc(8px + env(safe-area-inset-right)); bottom: calc(8px + env(safe-area-inset-bottom));
   }
   .pager { flex: 1; min-width: 0; justify-content: space-between; }
   .pager__label { width: auto; flex: 1; }
@@ -1046,7 +1056,7 @@ svg { flex-shrink: 0; }
   .sidebar {
     position: fixed; inset: 0 auto 0 0; z-index: 50;
     width: min(88vw, 380px);
-    padding: 16px 12px calc(12px + env(safe-area-inset-bottom));
+    padding: calc(16px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
     border-radius: 0 var(--r-2xl) var(--r-2xl) 0;
     box-shadow: var(--sh-lg);
     transform: translateX(-105%);
@@ -1054,7 +1064,7 @@ svg { flex-shrink: 0; }
     transition: transform .28s var(--ease), visibility 0s .28s;
   }
   .app.is-drawer-open .sidebar { transform: none; visibility: visible; transition: transform .28s var(--ease); }
-  .app.is-collapsed .sidebar { width: min(88vw, 380px); padding: 16px 12px; }
+  .app.is-collapsed .sidebar { width: min(88vw, 380px); padding: calc(16px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
   .drawer-backdrop {
     display: block;
     position: fixed; inset: 0; z-index: 40;
