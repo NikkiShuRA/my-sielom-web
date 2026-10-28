@@ -339,7 +339,7 @@ svg { flex-shrink: 0; }
   .app.is-drawer-open #sidebarToggle .ico-rest { display: none; }
 }
 .brand__logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.brand__logo img { border-radius: 50%; }
+.brand__logo img { border-radius: 11px; }
 .brand__text { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
 .brand__name { font-size: 15px; font-weight: 700; }
 .brand__sub { font-size: 13px; color: var(--c-muted); }

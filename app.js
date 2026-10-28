@@ -877,7 +877,7 @@
     const title = selectedTitle();
     $("#entityKind").textContent = KIND_LABEL[state.selected.kind];
     $("#entityName").textContent = title || "…";
-    document.title = title ? `${title} — Расписание СИЭУиП` : "СИЭУиП — Расписание";
+    document.title = title ? `${title} — Мой Сиелом` : "Мой Сиелом — Расписание";
   }
 
   function renderChrome() {

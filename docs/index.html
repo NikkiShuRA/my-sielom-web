@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Расписание СИЭУиП — презентация</title>
+  <title>Мой Сиелом — презентация</title>
   <meta name="description" content="Неофициальный клиент расписания Сургутского института экономики, управления и права: живая текущая пара, тёмная тема, расписание групп, преподавателей и кабинетов.">
-  <meta property="og:title" content="Расписание СИЭУиП — так, как должно быть">
+  <meta property="og:title" content="Мой Сиелом — расписание СИЭУиП так, как должно быть">
   <meta property="og:description" content="Неофициальный клиент расписания СИЭУиП: живая текущая пара, тёмная тема, горячие клавиши, мобильная версия.">
   <meta property="og:image" content="screenshots/day-light.webp">
   <meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
-  <link rel="icon" href="logo.svg">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
   <script>
     try { const t = localStorage.getItem("deck.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
   </script>
@@ -400,7 +400,49 @@
     @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
     .tile { background: var(--c-bg); border-radius: var(--r-lg); padding: 20px; box-shadow: var(--sh-sm); }
     .tile__ico { width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent-tint); color: var(--c-accent-ink); display: grid; place-items: center; margin-bottom: 14px; }
+    /* логотип колледжа рядом с упоминанием СИЭУиП */
+    .edu { white-space: nowrap; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 3px; transition: text-decoration-color .2s; }
+    .edu:hover, .eyebrow[href]:hover { text-decoration-color: currentColor; }
+    a.eyebrow { text-decoration: none; }
+    .edu img { display: inline-block; width: 1.15em; height: 1.15em; margin-right: .3em; vertical-align: -.2em; object-fit: contain; }
+    .eyebrow__logo { width: 18px; height: 18px; margin-right: 8px; object-fit: contain; }
     .tile h3 { font-size: 18px; margin-bottom: 6px; letter-spacing: -.01em; }
+    /* ===== Авторы: титры ===== */
+    .roll { list-style: none; margin: 28px 0 0; padding: 0; border-bottom: 1px solid var(--c-line-strong); }
+    .roll__row {
+      display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(220px, 300px); align-items: center; gap: 0 clamp(16px, 3vw, 40px);
+      padding: clamp(18px, 3.4vw, 34px) 0; border-top: 1px solid var(--c-line-strong);
+    }
+    .roll__no { font: 700 14px/1 var(--font-ui); letter-spacing: .08em; color: var(--c-muted); font-variant-numeric: tabular-nums; align-self: start; padding-top: .9em; }
+    .roll__name { display: flex; align-items: center; gap: .22em; min-width: 0; color: inherit; text-decoration: none; font: 800 clamp(40px, 6.4vw, 100px)/1 var(--font); letter-spacing: -.035em; white-space: nowrap; }
+    .roll__text {
+      transition: background-size .5s var(--ease), color .3s;
+      background: linear-gradient(transparent 70%, var(--c-accent) 70%, var(--c-accent) 92%, transparent 92%) no-repeat 0 0 / 0 100%;
+      padding: 0 .04em;
+    }
+    .roll__name:hover .roll__text, .roll__name:focus-visible .roll__text { background-size: 100% 100%; }
+    .roll__arrow { font-size: .34em; font-weight: 700; color: var(--c-muted); align-self: flex-start; margin-top: .3em; transition: transform .3s var(--ease), color .3s; }
+    .roll__name:hover .roll__arrow { transform: translate(.15em, -.15em); color: var(--c-accent-strong); }
+    .roll__ava {
+      flex: none; width: .86em; height: .86em; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+      background: var(--c-accent); box-shadow: 0 0 0 .05em var(--c-canvas), 0 0 0 .075em var(--c-accent-strong);
+      transition: transform .5s var(--ease);
+    }
+    .roll__name:hover .roll__ava { transform: rotate(-8deg) scale(1.04); }
+    .roll__ava img { width: 100%; height: 100%; object-fit: cover; }
+    .roll__role { margin: 0; font-size: 15px; line-height: 1.45; color: var(--c-text-2); max-width: 34ch; }
+    .roll__role b { display: block; margin-bottom: 4px; font: 700 12px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--c-accent-ink); }
+    .colophon { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px clamp(16px, 3vw, 40px); margin-top: 28px; }
+    .colophon h4 { margin: 0 0 6px; font: 700 12px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--c-muted); }
+    .colophon p { margin: 0; font-size: 14.5px; color: var(--c-text-2); max-width: 36ch; }
+    .colophon a { color: var(--c-text); text-decoration-color: var(--c-accent-strong); text-underline-offset: 3px; }
+    @media (max-width: 900px) {
+      .roll__row { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+      .roll__no { display: none; }
+      .roll__name { font-size: clamp(36px, 11.5vw, 80px); }
+      .roll__role { max-width: none; }
+      .colophon { grid-template-columns: 1fr; }
+    }
     .tile p { font-size: 14.5px; color: var(--c-text-2); }
 
     /* ===== Горячие клавиши ===== */
@@ -495,7 +537,7 @@
   <div class="progress" aria-hidden="true"><div class="progress__bar" id="bar"></div></div>
 
   <nav class="topnav">
-    <a class="brand" href="#s-hero"><img src="logo.svg" alt="" width="30" height="30">СИЭУиП · Расписание</a>
+    <a class="brand" href="#s-hero"><img src="icon.svg" alt="" width="30" height="30">Мой Сиелом</a>
     <div class="topnav__right">
       <span class="pill-btn counter" id="counter" aria-live="polite">01 / 10</span>
       <button class="pill-btn" id="themeBtn" title="Сменить тему (D)" aria-label="Сменить тему">
@@ -513,9 +555,9 @@
     <!-- 1. Обложка -->
     <section class="slide hero" id="s-hero" data-title="Обложка">
       <div class="slide__inner">
-        <span class="eyebrow rv">Сургутский институт экономики, управления и права</span>
+        <a class="eyebrow rv" href="https://sielom.ru/" target="_blank" rel="noopener"><img class="eyebrow__logo" src="edu-logo.webp" alt="" width="18" height="18">Сургутский институт экономики, управления и права</a>
         <h1 class="h-xl rv">Расписание,<br>которое <span class="mark">понимает время</span></h1>
-        <p class="lead rv">Неофициальный клиент расписания СИЭУиП. Те же данные, что на sielom.ru, — но с живой текущей парой, тёмной темой и нормальной мобильной версией.</p>
+        <p class="lead rv"><b>Мой Сиелом</b> — неофициальный клиент расписания <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a>. Те же данные, что на sielom.ru, — но с живой текущей парой, тёмной темой и нормальной мобильной версией.</p>
         <div class="hero__cta rv">
           <a class="pill-btn pill-btn--accent" href="https://nikkishura.github.io/my-sielom-web/" target="_blank" rel="noopener">Открыть расписание →</a>
           <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">GitHub</a>
@@ -679,7 +721,7 @@
               <tr><td>Экспорт в PDF</td><td class="y">Есть</td><td class="n">Пока нет</td></tr>
             </tbody>
           </table>
-          <div class="vs__phone"><p class="vs__label">my-sielom-web<span>этот проект</span></p><div class="phone phone--baked" style="--pw:210px"><div class="phone__screen"><img src="screenshots/mobile-day-light.webp" alt="Этот проект на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div></div>
+          <div class="vs__phone"><p class="vs__label">Мой Сиелом<span>этот проект</span></p><div class="phone phone--baked" style="--pw:210px"><div class="phone__screen"><img src="screenshots/mobile-day-light.webp" alt="Этот проект на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div></div>
         </div>
       </div>
     </section>
@@ -732,6 +774,38 @@
       </div>
     </section>
 
+    <!-- 11. Авторы -->
+    <section class="slide" id="s-authors" data-title="Авторы">
+      <div class="slide__inner">
+        <span class="eyebrow rv">Авторы</span>
+        <ul class="roll">
+          <li class="roll__row rv">
+            <span class="roll__no" aria-hidden="true">01</span>
+            <a class="roll__name" href="https://github.com/NikkiShuRA" target="_blank" rel="noopener" aria-label="NikkiShuRA на GitHub">
+              <span class="roll__ava"><img src="avatars/nikkishura.webp" alt="" width="120" height="120" loading="lazy"></span>
+              <span class="roll__text">NikkiShuRA</span>
+              <span class="roll__arrow" aria-hidden="true">↗</span>
+            </a>
+            <p class="roll__role"><b>Автор проекта</b>Идея, решения по интерфейсу и разработка. Владелец репозитория.</p>
+          </li>
+          <li class="roll__row rv">
+            <span class="roll__no" aria-hidden="true">02</span>
+            <a class="roll__name" href="https://github.com/NikkiShuRA/my-sielom-web/commits/master" target="_blank" rel="noopener" aria-label="История коммитов с Claude">
+              <span class="roll__ava"><img src="avatars/claude.webp" alt="" width="120" height="120" loading="lazy"></span>
+              <span class="roll__text">Claude</span>
+              <span class="roll__arrow" aria-hidden="true">↗</span>
+            </a>
+            <p class="roll__role"><b>Соавтор</b>ИИ-ассистент Anthropic: код и вёрстка. Указан соавтором в коммитах репозитория.</p>
+          </li>
+        </ul>
+        <div class="colophon rv">
+          <div><h4>Данные</h4><p>Расписание и фото сотрудников — с официальных сайтов колледжа, <a href="https://sielom.ru/timetable/" target="_blank" rel="noopener">sielom.ru</a>.</p></div>
+          <div><h4>Исходники</h4><p>Открыты на <a href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">GitHub</a>: история изменений и описание.</p></div>
+          <div><h4>Статус</h4><p>Неофициальный проект. С <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a> не связан.</p></div>
+        </div>
+      </div>
+    </section>
+
     <!-- 11. Финал -->
     <section class="slide final" id="s-final" data-title="Попробовать">
       <div class="slide__inner">
@@ -743,7 +817,7 @@
           <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">Исходный код</a>
         </div>
         <div class="roadmap rv"><span>Скоро: уведомления о начале пары</span><span>Экспорт в календарь</span><span>Офлайн-режим</span></div>
-        <p class="foot">Неофициальный проект, не связан с СИЭУиП. Данные — с sielom.ru.</p>
+        <p class="foot">Неофициальный проект, не связан с <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a>. Данные — с sielom.ru.</p>
       </div>
     </section>
   </main>
