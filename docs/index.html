@@ -149,11 +149,45 @@
 
     .shot { border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--sh-lg); background: var(--c-bg); }
     .shot img { width: 100%; }
+    /* Макет телефона: все размеры считаются от ширины --pw, поэтому скругления всегда соразмерны.
+       Внешнее скругление корпуса = скругление экрана + рамка (концентрично). Сверху и снизу — безопасные зоны:
+       статус-бар с «островком» и жестовая полоса. В наших скриншотах они уже заложены (phone--baked). */
     .phone {
-      width: min(300px, 70vw); aspect-ratio: 390 / 844; border-radius: 44px; padding: 10px; background: #1a1a18;
-      box-shadow: var(--sh-lg), inset 0 0 0 2px #3a3a36; flex: none; position: relative;
+      --pw: min(300px, 70vw);
+      --bez: calc(var(--pw) * .03);
+      --r: calc(var(--pw) * .15);
+      --ink: #14140f;
+      width: var(--pw); aspect-ratio: 390 / 844; padding: var(--bez); flex: none; position: relative;
+      border-radius: var(--r); background: #1a1a18;
+      box-shadow: var(--sh-lg), inset 0 0 0 calc(var(--pw) * .007) #3a3a36;
     }
-    .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 34px; }
+    .phone--dark { --ink: #f4f4ee; }
+    .phone__screen {
+      position: relative; width: 100%; height: 100%; overflow: hidden; isolation: isolate;
+      border-radius: calc(var(--r) - var(--bez)); background: #f3f3f0;
+    }
+    .phone--dark .phone__screen { background: #111110; }
+    .phone__screen img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    /* снимок без встроенных безопасных зон (например, официальный сайт): отступаем сами */
+    .phone:not(.phone--baked) .phone__screen { padding: calc(var(--pw) * .12) 0 calc(var(--pw) * .09); background: #fff; }
+    .phone__bar {
+      position: absolute; z-index: 2; top: 0; left: 0; right: 0; height: calc(var(--pw) * .12);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 calc(var(--pw) * .085) 0 calc(var(--pw) * .11);
+      color: var(--ink); font: 600 calc(var(--pw) * .04)/1 var(--font-ui); letter-spacing: -.01em; pointer-events: none;
+    }
+    .phone__bar::after {
+      content: ""; width: calc(var(--pw) * .17); height: calc(var(--pw) * .034); background: currentColor;
+      -webkit-mask: var(--status-icons) center / contain no-repeat; mask: var(--status-icons) center / contain no-repeat;
+    }
+    .phone__island {
+      position: absolute; z-index: 3; top: calc(var(--pw) * .028); left: 50%; transform: translateX(-50%);
+      width: calc(var(--pw) * .3); height: calc(var(--pw) * .085); border-radius: 999px; background: #000;
+    }
+    .phone__home {
+      position: absolute; z-index: 2; bottom: calc(var(--pw) * .022); left: 50%; transform: translateX(-50%);
+      width: calc(var(--pw) * .34); height: max(3px, calc(var(--pw) * .013)); border-radius: 999px; background: var(--ink); opacity: .9; pointer-events: none;
+    }
+    :root { --status-icons: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 66 13'%3E%3Cpath d='M0 9h3v4H0zM5 6.5h3V13H5zM10 4h3v9h-3zM15 1h3v12h-3z'/%3E%3Cpath d='M30 2.5c3 0 5.700 1.100 7.800 3l-1.500 1.600A8.600 8.600 0 0 0 30 4.800c-2.300 0-4.400.9-6.300 2.300L22.200 5.500A12 12 0 0 1 30 2.500zm0 4.300c1.800 0 3.400.7 4.700 1.800L33.200 10.200a5.200 5.200 0 0 0-6.400 0L25.300 8.600A7.800 7.800 0 0 1 30 6.800zm0 4.200c.9 0 1.700.4 2.300 1L30 13.200 27.700 12c.6-.6 1.400-1 2.300-1z'/%3E%3Cpath fill-rule='evenodd' d='M41 .5h20a3.500 3.500 0 0 1 3.500 3.500v5a3.500 3.500 0 0 1-3.500 3.500H41A3.500 3.500 0 0 1 37.500 9V4A3.500 3.500 0 0 1 41 .5zm0 1.200A2.300 2.300 0 0 0 38.700 4v5A2.300 2.300 0 0 0 41 11.300h20A2.300 2.300 0 0 0 63.300 9V4A2.300 2.300 0 0 0 61 1.700zM41 3h18v7H41z'/%3E%3Cpath d='M65.500 4.600v3.800c.8-.3 1.500-1.100 1.500-1.900s-.7-1.600-1.500-1.900z'/%3E%3C/svg%3E"); }
     .caption { margin-top: 12px; font-size: 13px; color: var(--c-muted); text-align: center; }
 
     .bullets { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 14px; }
@@ -177,8 +211,7 @@
     .hero__stage { position: relative; margin: 44px auto 0; max-width: 1000px; }
     .hero__stage .shot { height: min(32vh, 320px); transform: perspective(1800px) rotateX(8deg); transform-origin: 50% 0; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
     .hero__stage .shot img { height: 100%; object-fit: cover; object-position: top; }
-    .hero__stage .phone { position: absolute; right: -1%; top: -28px; width: min(170px, 22vw); border-radius: 30px; padding: 6px; }
-    .hero__stage .phone img { border-radius: 25px; }
+    .hero__stage .phone { position: absolute; right: -1%; top: -28px; --pw: min(170px, 22vw); }
     .hero__chip {
       position: absolute; left: -2%; top: 30%; padding: 12px 16px; border-radius: 16px; background: var(--c-bg); box-shadow: var(--sh-lg);
       font: 600 14px/1.3 var(--font-ui); text-align: left; animation: bob 5s ease-in-out infinite;
@@ -192,45 +225,131 @@
     /* ===== 2. Проблема ===== */
     .before { display: flex; gap: 24px; align-items: flex-end; justify-content: center; }
     .before .shot { flex: 1; min-width: 0; filter: saturate(.85); }
-    .before .phone { width: min(220px, 34vw); }
+    .before .phone { --pw: min(220px, 34vw); }
     @media (max-width: 700px) { .before .shot { display: none; } }
 
     /* ===== 3. Живая пара: интерактивное демо ===== */
-    .demo { background: var(--c-bg); border-radius: var(--r-xl); box-shadow: var(--sh-lg); padding: clamp(18px, 3vw, 32px); }
-    .demo__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-    .demo__day { font: 800 28px/1 var(--font); }
-    .demo__sub { color: var(--c-muted); font-size: 14px; margin-top: 4px; }
-    .demo__clock { font: 700 32px/1 var(--font); font-variant-numeric: tabular-nums; }
-    .tl { display: grid; gap: 10px; }
-    .tl-row { display: grid; grid-template-columns: 54px 18px 1fr; gap: 12px; align-items: start; }
-    .tl-time { text-align: right; font: 700 15px/1.2 var(--font); padding-top: 14px; }
-    .tl-time small { display: block; font: 500 13px/1.3 var(--font-ui); color: var(--c-muted); }
-    .tl-dot { width: 14px; height: 14px; margin-top: 17px; border-radius: 99px; border: 2px solid var(--c-line-strong); background: var(--c-bg); transition: all .3s var(--ease); }
-    .card {
-      position: relative; overflow: hidden; border-radius: var(--r-lg); padding: 14px 16px; background: var(--c-surface);
-      border: 2px solid transparent; transition: all .35s var(--ease);
+    /* Макет «Дня» из приложения: те же правила и токены, что в styles.css, но под .appview, чтобы не конфликтовать со страницей */
+    .appview {
+      --r-2xl: 24px; --r-xl: 18px; --r-lg: 14px; --r-md: 10px; --r-sm: 7px; --r-full: 999px; --dur: .2s;
+      --sh-xs: 0 0 0 1px rgba(40, 40, 20, .05), 0 1px 2px rgba(40, 40, 20, .04);
+      --c-warn: #c25700; --c-warn-bg: #fff2e6; --c-warn-line: #ffd3ad; --av-bg: 55% 90%; --av-fg: 35% 32%;
+      font: 14px/1.5 var(--font-ui); color: var(--c-text);
     }
-    .card__chip { display: none; margin-bottom: 8px; padding: 4px 10px; border-radius: 99px; font: 600 12.5px/1.2 var(--font-ui); width: fit-content; }
-    .card__title { font: 700 17px/1.25 var(--font); }
-    .card__meta { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 14px; color: var(--c-text-2); }
-    .room { padding: 2px 8px; border-radius: 8px; background: var(--c-bg); box-shadow: 0 0 0 1px var(--c-line-strong); font: 700 13px/1.4 var(--font); color: var(--c-text); }
-    .card__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--c-line); display: none; }
-    .card__bar i { display: block; height: 100%; background: var(--c-accent-strong); width: 0; transition: width .3s var(--ease); }
-    .tl-row.is-now .card { background: var(--c-bg); border-color: var(--c-accent-strong); }
-    .tl-row.is-now .card__chip { display: block; background: var(--c-accent); color: var(--c-on-accent); }
-    .tl-row.is-now .card__bar { display: block; }
-    .tl-row.is-now .tl-dot { border-color: var(--c-accent-strong); background: var(--c-accent-strong); box-shadow: 0 0 0 5px var(--c-accent-tint); }
-    .tl-row.is-next .card__chip { display: block; background: var(--c-accent-tint); color: var(--c-accent-ink); }
-    .tl-row.is-past .card { opacity: .5; padding-block: 8px; }
-    .tl-row.is-past .card__title { text-decoration: line-through; font-size: 15px; }
-    .tl-row.is-past .card__meta { display: none; }
-    .tl-row.is-past .tl-time { opacity: .5; padding-top: 8px; }
-    .tl-row.is-past .tl-dot { margin-top: 11px; }
-    .break { margin-left: 84px; font-size: 12.5px; color: var(--c-muted); display: flex; align-items: center; gap: 8px; }
-    .break::after { content: ""; flex: 1; height: 1px; background: var(--c-line); }
-    .scrub { margin-top: 22px; }
-    .scrub label { display: flex; justify-content: space-between; font-size: 13px; color: var(--c-muted); margin-bottom: 8px; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .appview { --sh-xs: 0 0 0 1px rgba(255, 255, 255, .05), 0 1px 2px rgba(0, 0, 0, .3); --c-warn: #ff9d57; --c-warn-bg: #33220f; --c-warn-line: #5c3815; --av-bg: 28% 26%; --av-fg: 60% 82%; }
+    }
+    :root[data-theme="dark"] .appview { --sh-xs: 0 0 0 1px rgba(255, 255, 255, .05), 0 1px 2px rgba(0, 0, 0, .3); --c-warn: #ff9d57; --c-warn-bg: #33220f; --c-warn-line: #5c3815; --av-bg: 28% 26%; --av-fg: 60% 82%; }
+    .appview h2, .appview h3, .appview ul, .appview ol { margin: 0; padding: 0; list-style: none; }
+    .appview button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: default; }
+    .appview .dayview { padding: 0 24px 24px; max-width: none; margin: 0; }
+    .appview .strip { position: static; }
+    .appview .lesson { cursor: default; }
+    .demo { background: var(--c-bg); border-radius: var(--r-xl); box-shadow: var(--sh-lg); overflow: hidden; }
+    .demo__bar { border-top: 1px solid var(--c-line); display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 24px; background: var(--c-surface); font-size: 13px; color: var(--c-muted); }
+    .demo__now { font-weight: 600; color: var(--c-text-2); white-space: nowrap; }
+    .demo__bar input[type=range] { flex: 1; min-width: 0; }
+    .demo__now b { font: 800 20px/1 var(--font); color: var(--c-text); font-variant-numeric: tabular-nums; margin-left: 6px; }
+    .appview .chip { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: var(--r-full); background: var(--c-surface-2); font-family: var(--font-ui); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .appview .chip--live { background: var(--c-accent); color: var(--c-on-accent); }
+    .appview .chip--live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c-on-accent); animation: app-pulse 1.6s ease-in-out infinite; }
+    .appview .chip--next { background: var(--c-accent-tint); color: var(--c-accent-ink); }
+    .appview .chip--muted { background: var(--c-surface); color: var(--c-muted); }
+    .appview .chip--today { height: 20px; padding: 0 8px; background: var(--c-on-accent); color: var(--c-accent); }
+    .appview .grow { flex: 1; }
+    .appview .avatar { --h: 45; width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; overflow: hidden; background: hsl(var(--h) var(--av-bg)); color: hsl(var(--h) var(--av-fg)); font-size: 14px; font-weight: 700; }
+    .appview .avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+    .appview .avatar--xs { width: 22px; height: 22px; border-radius: 7px; font-size: 9px; }
+    .appview .avatar--lg { width: 56px; height: 56px; border-radius: 16px; font-size: 18px; }
+    .appview .shift-divider { display: flex; align-items: center; gap: 8px; margin: 4px 0; font: 600 10.5px var(--font-ui); color: var(--c-muted); text-transform: uppercase; letter-spacing: .06em; }
+    .appview .shift-divider::before, .appview .shift-divider::after { content: ""; flex: 1; height: 1px; background: var(--c-line-strong); }
+    .appview .lesson { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 12px; background: var(--c-surface); border-radius: var(--r-lg); cursor: pointer; overflow: hidden; transition: background var(--dur), box-shadow var(--dur), transform .12s; }
+    .appview .lesson:hover { background: var(--c-bg); box-shadow: var(--sh-sm); }
+    .appview .lesson:active { transform: scale(.985); }
+    .appview .lesson.is-now { background: var(--c-bg); box-shadow: 0 0 0 2px var(--c-accent-strong), var(--sh-sm); }
+    .appview .lesson.is-now::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--c-line-strong); }
+    .appview .lesson.is-now::after { content: ""; position: absolute; left: 0; bottom: 0; z-index: 1; width: var(--progress, 0%); height: 4px; background: var(--c-accent-strong); border-radius: 0 3px 3px 0; }
+    .appview .lesson.is-next { box-shadow: 0 0 0 1px var(--c-accent-strong), var(--sh-xs); }
+    .appview .lesson__meta { display: flex; align-items: center; gap: 8px; min-height: 22px; font-size: 12px; color: var(--c-text-2); }
+    .appview .lesson__num { min-width: 22px; height: 22px; padding: 0 6px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-sm); background: var(--c-bg); box-shadow: inset 0 0 0 1px var(--c-line); font-size: 12px; font-weight: 800; color: var(--c-text); font-variant-numeric: tabular-nums; }
+    .appview .lesson__time { font-family: var(--font-ui); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .appview .lesson__note { display: grid; color: var(--c-warn); }
+    .appview .lesson__title { font-size: 14.5px; font-weight: 700; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; }
+    .appview .parts { display: flex; flex-direction: column; gap: 4px; }
+    .appview .part { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; }
+    .appview .part:has(.who-stack) { align-items: stretch; }
+    .appview .sg { width: 18px; height: 18px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; background: var(--c-text); color: var(--c-bg); font: 700 10.5px var(--font-ui); }
+    .appview .sg--lg { width: auto; min-width: 40px; height: 40px; padding: 0 10px; border-radius: 12px; white-space: nowrap; font-size: 15px; background: var(--c-bg); color: var(--c-text); box-shadow: inset 0 0 0 1px var(--c-line); }
+    .appview .room { display: flex; align-items: center; justify-content: center; min-width: 40px; padding: 2px 8px; flex-shrink: 0; border-radius: var(--r-sm); background: var(--c-bg); box-shadow: inset 0 0 0 1px var(--c-line-strong); font-weight: 800; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .appview .room.is-changed { background: var(--c-warn-bg); color: var(--c-warn); box-shadow: inset 0 0 0 1px var(--c-warn-line); }
+    .appview .who-stack { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .appview .who-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .appview .room--lg { padding: 4px 10px; font-size: 15px; }
+    .appview .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-text-2); }
+    .appview .lesson.is-past { opacity: .7; }
+    .appview .lesson.is-past:hover { opacity: 1; }
+    .appview .lesson.is-past .lesson__title { text-decoration: line-through; text-decoration-color: var(--c-text-2); text-decoration-thickness: 2px; color: var(--c-text-2); }
+    .appview .lesson.is-past::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c-line-strong); }
+    .appview .strip { position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 16px 24px 10px; margin: 0 -24px; background: linear-gradient(var(--c-bg) 85%, transparent); }
+    .appview .strip__day { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px; border-radius: var(--r-lg); transition: background var(--dur), transform .1s; }
+    .appview .strip__day:hover { background: var(--c-surface); }
+    .appview .strip__day:active { transform: scale(.96); }
+    .appview .strip__wd { font-size: 12px; color: var(--c-muted); }
+    .appview .strip__num { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+    .appview .strip__dots { display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 100%; }
+    .appview .strip__dots span { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; min-height: 4px; }
+    .appview .strip__dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--c-line-strong); }
+    .appview .strip__dots i.is-empty { background: none; box-shadow: inset 0 0 0 1px var(--c-line-strong); opacity: .7; }
+    .appview .strip__day.is-today .strip__wd { color: var(--c-accent-ink); font-weight: 700; }
+    .appview .strip__day.is-today:not(.is-active) { box-shadow: inset 0 0 0 1.5px var(--c-accent-strong); }
+    .appview .strip__day.is-active { background: var(--c-accent); color: var(--c-on-accent); }
+    .appview .strip__day.is-active .strip__wd { color: var(--c-on-accent); }
+    .appview .strip__day.is-active .strip__dots i { background: var(--c-on-accent); opacity: .45; }
+    .appview .strip__day.is-active .strip__dots i.is-empty { background: none; box-shadow: inset 0 0 0 1px var(--c-on-accent); opacity: .35; }
+    .appview .dv-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
+    .appview .dv-title { font-size: 30px; font-weight: 800; letter-spacing: -.015em; line-height: 1.1; }
+    .appview .dv-date { color: var(--c-text-2); }
+    .appview .dv-summary { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--r-full); background: var(--c-surface); font-size: 13px; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
+    .appview .timeline { display: flex; flex-direction: column; }
+    .appview .tl-row { display: grid; grid-template-columns: 52px 20px 1fr; column-gap: 12px; padding-bottom: 10px; }
+    .appview .tl-time { display: flex; flex-direction: column; align-items: flex-end; padding-top: 26px; font-variant-numeric: tabular-nums; line-height: 1.25; }
+    .appview .tl-start { font-size: 15px; font-weight: 800; }
+    .appview .tl-end { font-size: 12.5px; color: var(--c-muted); }
+    .appview .tl-rail { position: relative; display: flex; justify-content: center; }
+    .appview .tl-rail::before { content: ""; position: absolute; top: 0; bottom: -10px; width: 2px; background: var(--c-line); }
+    .appview .tl-row:first-child .tl-rail::before { top: 32px; }
+    .appview .tl-row:last-child .tl-rail::before { bottom: auto; height: 32px; }
+    .appview .tl-row:first-child:last-child .tl-rail::before { display: none; }
+    .appview .tl-row.is-past .tl-rail::before { background: var(--c-accent-strong); }
+    .appview .tl-row.is-now .tl-rail::before { background: linear-gradient(var(--c-accent-strong) calc(36px + (100% - 36px) * var(--p, 0)), var(--c-line) 0); }
+    .appview .tl-dot { position: relative; z-index: 1; width: 12px; height: 12px; margin-top: 30px; border-radius: 50%; background: var(--c-bg); box-shadow: inset 0 0 0 2px var(--c-line-strong); }
+    .appview .tl-row.is-past .tl-dot { background: var(--c-accent-strong); box-shadow: none; }
+    .appview .tl-row.is-now .tl-dot { background: var(--c-accent-strong); box-shadow: 0 0 0 5px rgba(242, 194, 0, .25); }
+    .appview .tl-row--window .tl-dot { width: 8px; height: 8px; margin-top: 20px; }
+    .appview .tl-dot--break { width: 8px; height: 8px; margin-top: 3px; }
+    .appview .tl-row--shift.is-now .tl-dot--break { box-shadow: 0 0 0 4px rgba(242, 194, 0, .25); }
+    .appview .tl-row--shift.is-now .tl-rail::before { background: linear-gradient(var(--c-accent-strong) calc(7px + (100% - 7px) * var(--p, 0)), var(--c-line) 0); }
+    .appview .tl-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .appview .tl-num { padding-left: 4px; font: 600 11px var(--font-ui); color: var(--c-muted); text-transform: uppercase; letter-spacing: .05em; }
+    .appview .tl-row.is-now .tl-num { color: var(--c-accent-ink); }
+    .appview .tl-row--shift { padding-bottom: 6px; }
+    .appview .tl-row--shift .shift-divider { margin: 0; }
+    .appview .tl-row--window .tl-time { padding-top: 16px; opacity: .6; }
+    .appview .window { height: 36px; padding: 0 14px; display: flex; align-items: center; border-radius: var(--r-lg); border: 1px dashed var(--c-line-strong); color: var(--c-muted); font-size: 13px; }
+    .appview .lesson--full { padding: 14px 16px 16px; gap: 10px; }
+    .appview .lesson--full .lesson__meta { min-height: 0; }
+    .appview .lesson--full .lesson__title { font-size: 17px; display: block; }
+    .appview .lesson--full .parts { gap: 8px; }
+    .appview .lesson--full .part { font-size: 14px; gap: 8px; }
+    .appview .lesson--full .who { color: var(--c-text); white-space: normal; }
+    .appview .lesson__notes { margin: 0; font-size: 13px; line-height: 1.4; color: var(--c-warn); }
+    @keyframes app-pulse { 50% { opacity: .25; } }
     input[type=range] { width: 100%; accent-color: var(--c-accent-strong); height: 28px; cursor: pointer; }
+    .dv-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
     /* ===== Сравнение светлая/тёмная ===== */
     .compare { position: relative; border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--sh-lg); user-select: none; touch-action: pan-y; --pos: 50%; }
@@ -250,6 +369,8 @@
     .tab[aria-selected="true"] { background: var(--c-accent); color: var(--c-on-accent); }
     .tab-copy { margin-top: 22px; min-height: 7.5em; color: var(--c-text-2); }
     .tab-copy b { color: var(--c-text); display: block; font: 700 20px/1.3 var(--font); margin-bottom: 6px; }
+    .search-note { margin-top: 18px; padding: 12px 14px; border-radius: var(--r-lg); background: var(--c-accent-tint); color: var(--c-accent-ink); display: flex; gap: 10px; align-items: baseline; font-size: 14.5px; }
+    .search-note b { font-weight: 700; }
     .tab-stage { position: relative; }
     .tab-stage .shot { transition: opacity .35s var(--ease); }
     .tab-stage .shot + .shot { position: absolute; inset: 0; }
@@ -257,7 +378,7 @@
 
     /* ===== Мобильные ===== */
     .phones { display: flex; gap: clamp(14px, 3vw, 36px); justify-content: center; align-items: flex-start; }
-    .phones .phone { width: min(250px, 42vw); }
+    .phones .phone { --pw: min(250px, 42vw); }
     .phones .phone:nth-child(2) { margin-top: 48px; }
     @media (max-width: 700px) { .phones .phone:nth-child(3) { display: none; } }
 
@@ -315,9 +436,18 @@
     .foot { margin-top: 40px; font-size: 13px; color: var(--c-muted); }
 
     .detail-shot .phone { display: none; }
+    .detail-shot [hidden] { display: none !important; }
+    .detail-tabs { margin-top: 16px; }
+    .detail-shot .caption { text-align: left; }
     /* ===== Телефоны ===== */
     html, body { overflow-x: clip; }
     @media (max-width: 600px) {
+      .appview .dayview { padding: 0 8px 14px; }
+      .appview .strip { padding: 12px 8px 8px; margin: 0 -8px; gap: 4px; }
+      .appview .lesson--full { padding: 12px 12px 14px; }
+      .appview .tl-row { grid-template-columns: 44px 14px 1fr; column-gap: 8px; }
+      .appview .tl-start { font-size: 14px; }
+      .demo__bar { padding-left: 14px; padding-right: 14px; }
       .topnav { top: 10px; left: 10px; right: 10px; gap: 8px; }
       .brand { padding: 5px; font-size: 0; gap: 0; }   /* только логотип, без подписи */
       .brand img { width: 32px; height: 32px; }
@@ -331,35 +461,26 @@
       .lead { margin-top: 16px; }
       .hero__cta .pill-btn { height: 48px; padding: 0 20px; font-size: 15px; }
       .detail-shot .shot { display: none; }
-      .detail-shot .phone { display: block; margin: 0 auto; width: min(240px, 62vw); }
+      .detail-shot .phone { display: block; margin: 0 auto; --pw: min(240px, 62vw); }
       .hero__stage { margin-top: 32px; padding-bottom: 28px; }
       /* скриншот целиком, без обрезки по бокам; телефон — поверх нижнего угла */
       .hero__stage .shot { height: auto; transform: none; -webkit-mask-image: none; mask-image: none; }
       .hero__stage .shot img { height: auto; object-fit: initial; }
-      .hero__stage .phone { top: auto; bottom: 0; right: 6px; width: 104px; border-radius: 22px; padding: 4px; }
-      .hero__stage .phone img { border-radius: 18px; }
+      .hero__stage .phone { top: auto; bottom: 0; right: 6px; --pw: 112px; }
 
-      .demo { padding: 16px; }
-      .demo__day { font-size: 24px; }
-      .demo__clock { font-size: 26px; }
-      .tl-row { grid-template-columns: 44px 14px 1fr; gap: 8px; }
-      .tl-time { font-size: 14px; }
-      .break { margin-left: 66px; }
-      .card { padding: 12px 14px; }
-      .card__title { font-size: 16px; }
 
       .tabs { display: flex; width: 100%; margin-top: 22px; }
       .tab { flex: 1; min-width: 0; padding: 10px 4px; font-size: 13px; }
       .tab-copy { min-height: 0; }
 
       .phones { gap: 12px; }
-      .phones .phone { width: min(200px, 44vw); border-radius: 32px; padding: 7px; }
-      .phones .phone img { border-radius: 26px; }
+      .phones .phone { --pw: min(200px, 44vw); }
       .phones .phone:nth-child(2) { margin-top: 32px; }
 
       .table { font-size: 13px; }
       .table th, .table td { padding: 9px 8px; }
       .table th { font-size: 10.5px; letter-spacing: .03em; }
+      .table td, .table th { overflow-wrap: anywhere; }
 
       .tile { padding: 16px; }
       .key-row { grid-template-columns: 84px 1fr; gap: 10px; padding: 10px 12px; }
@@ -401,8 +522,8 @@
         </div>
         <div class="hero__stage rv">
           <div class="shot"><img src="screenshots/week-light.webp" alt="Расписание группы на неделю, светлая тема" width="1600" height="1000"></div>
-          <div class="phone"><img src="screenshots/mobile-day-dark.webp" alt="Режим «День» на телефоне, тёмная тема" width="780" height="1688"></div>
-          <div class="hero__chip"><span class="live-dot"></span>Идёт · ещё 38 мин<span>4 пара · ауд. 115</span></div>
+          <div class="phone phone--dark phone--baked"><div class="phone__screen"><img src="screenshots/mobile-day-dark.webp" alt="Режим «День» на телефоне, тёмная тема" width="780" height="1688"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
+          <div class="hero__chip"><span class="live-dot"></span>Идёт · ещё 38 мин<span>4 пара · ауд. 208</span></div>
         </div>
       </div>
     </section>
@@ -423,7 +544,7 @@
         <div class="before rv">
           <div class="shot"><img src="screenshots/off-desktop-week.webp" alt="Официальное расписание на sielom.ru, неделя" width="1600" height="1000" loading="lazy"></div>
           <div>
-            <div class="phone"><img src="screenshots/off-mobile.webp" alt="Официальное расписание на телефоне" width="780" height="1688" loading="lazy"></div>
+            <div class="phone phone--baked"><div class="phone__screen"><img src="screenshots/off-mobile.webp" alt="Официальное расписание на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
             <p class="caption">sielom.ru/timetable · та же группа, тот же день</p>
           </div>
         </div>
@@ -436,23 +557,16 @@
         <div>
           <span class="eyebrow rv">Главная фича</span>
           <h2 class="h-lg rv">Сразу видно, <span class="mark">что сейчас</span></h2>
-          <p class="lead rv">Расписание пересчитывается каждую минуту. Текущая пара подсвечена, внизу полоса прогресса, следующая помечена «через N мин», прошедшие схлопываются в строку.</p>
+          <p class="lead rv">Расписание пересчитывается каждую минуту. Текущая пара подсвечена, внизу полоса прогресса, следующая помечена «через N мин», а прошедшие — приглушены и зачёркнуты.</p>
           <ul class="bullets rv">
             <li><span class="ico">1</span><span><b>Таймер</b> «Идёт · ещё 38 мин» прямо на карточке</span></li>
-            <li><span class="ico">2</span><span><b>Пересменка и перемены</b> между парами видны на таймлайне</span></li>
-            <li><span class="ico">3</span><span><b>Попробуйте сами</b> — двигайте ползунок времени справа</span></li>
+            <li><span class="ico">2</span><span><b>Линия дня заполняется</b> по ходу пар, а у перерыва — своя точка и подпись «Перерыв 20 мин» по реальным данным корпуса</span></li>
+            <li><span class="ico">3</span><span><b>Попробуйте сами</b> — двигайте ползунок времени внизу</span></li>
           </ul>
         </div>
         <div class="demo rv" id="demo">
-          <div class="demo__head">
-            <div><div class="demo__day">Вторник</div><div class="demo__sub">ИС-23/9-2 · 27 октября</div></div>
-            <div class="demo__clock" id="demoClock">14:22</div>
-          </div>
-          <div class="tl" id="tl"></div>
-          <div class="scrub">
-            <label for="scrub"><span>Время</span><span>13:00 — 18:30</span></label>
-            <input type="range" id="scrub" min="780" max="1110" step="1" value="862" aria-label="Время суток в демо">
-          </div>
+          <div class="appview"><div class="dayview" id="appDay"></div></div>
+          <div class="demo__bar"><span class="demo__now">Сейчас <b id="demoClock">14:22</b></span><input type="range" id="scrub" min="780" max="1110" step="1" value="862" aria-label="Время суток в демо, от 13:00 до 18:30"></div>
         </div>
       </div>
     </section>
@@ -473,10 +587,11 @@
         <div>
           <span class="eyebrow rv">Два режима · три темы</span>
           <h2 class="h-lg rv">Вся неделя одним взглядом</h2>
-          <p class="lead rv">«Неделя» — шесть колонок, сегодняшний день выделен жёлтым, прошедшие пары приглушены. «День» — таймлайн с подробностями. Режим запоминается.</p>
+          <p class="lead rv">«Неделя» — единая сетка: пары с одним номером лежат на одной линии, а строка подстраивается под самую высокую карточку. Сегодня выделено жёлтым, прошедшие пары приглушены, пустой день отмечен чашкой. «День» — таймлайн с подробностями. Режим запоминается.</p>
           <ul class="bullets rv">
             <li><span class="ico">◐</span><span><b>Системная, светлая или тёмная</b> тема — применяется до отрисовки, без белой вспышки</span></li>
             <li><span class="ico">⇆</span><span><b>Перетаскивание мышью</b> по сетке недели и свайпы по дням на телефоне</span></li>
+            <li><span class="ico">¶</span><span><b>Названия пар — до двух строк</b>, а если в строке есть место, показываются полнее</span></li>
           </ul>
         </div>
       </div>
@@ -494,9 +609,10 @@
             <button class="tab" role="tab" aria-selected="false" data-i="2">Кабинеты</button>
           </div>
           <div class="tab-copy rv" id="kindCopy"></div>
+          <p class="search-note rv"><kbd>/</kbd> <span><b>Один поиск на всё.</b> Группы, преподаватели и кабинеты всех корпусов сразу, <kbd>Enter</kbd> открывает первый результат.</span></p>
         </div>
         <div class="tab-stage rv" id="kindStage">
-          <div class="shot"><img src="screenshots/search-light.webp" alt="Поиск групп" width="1600" height="1000" loading="lazy"></div>
+          <div class="shot"><img src="screenshots/search-light.webp" alt="Один поиск по группам, преподавателям и кабинетам" width="1600" height="1000" loading="lazy"></div>
           <div class="shot" hidden><img src="screenshots/teacher-light.webp" alt="Расписание преподавателя" width="1600" height="1000" loading="lazy"></div>
           <div class="shot" hidden><img src="screenshots/room-dark.webp" alt="Расписание кабинета" width="1600" height="1000" loading="lazy"></div>
         </div>
@@ -506,16 +622,16 @@
     <!-- 6. Карточка пары -->
     <section class="slide" id="s-detail" data-title="Подробности пары">
       <div class="slide__inner split split--rev">
-        <div class="rv detail-shot"><div class="shot"><img src="screenshots/modal-light.webp" alt="Окно с подробностями пары" width="1600" height="1000" loading="lazy"></div><div class="phone"><img src="screenshots/mobile-modal-light.webp" alt="Подробности пары на телефоне" width="780" height="1688" loading="lazy"></div></div>
+        <div class="rv detail-shot" id="detailShot"><div class="shot" data-v="0"><img src="screenshots/modal-light.webp" alt="Окно с подробностями пары" width="1600" height="1000" loading="lazy"></div><div class="shot" data-v="1" hidden><img src="screenshots/modal-note-light.webp" alt="Подробности пары с примечанием о замене" width="1600" height="1000" loading="lazy"></div><div class="phone phone--baked" data-v="0"><div class="phone__screen"><img src="screenshots/mobile-modal-light.webp" alt="Подробности пары на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div><div class="phone phone--baked" data-v="1" hidden><div class="phone__screen"><img src="screenshots/mobile-modal-note-light.webp" alt="Подробности пары с примечанием о замене на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div><div class="tabs detail-tabs" role="tablist" aria-label="Пример"><button class="tab" role="tab" aria-selected="true" data-v="0">Обычная пара</button><button class="tab" role="tab" aria-selected="false" data-v="1">С заменой</button></div><p class="caption" id="detailCaption">Так выглядят подробности обычной пары.</p></div>
         <div>
           <span class="eyebrow rv">Один тап — всё о паре</span>
           <h2 class="h-lg rv">Где, кто, с кем</h2>
           <ul class="bullets rv">
-            <li><span class="ico">📍</span><span><b>Аудитория, номер корпуса и адрес</b> — не нужно вспоминать, где «Пролетарский, 3»</span></li>
+            <li><span class="ico">📍</span><span><b>Номер кабинета — в плашке</b>, полный код («Р-213») и адрес корпуса рядом. Выездные места вроде СОКБ — с их настоящим адресом</span></li>
             <li><span class="ico">👤</span><span><b>Полное ФИО преподавателя</b> с аватаром из базы сотрудников</span></li>
-            <li><span class="ico">↗</span><span><b>Переходы по ссылкам:</b> клик по преподавателю открывает его расписание, по группе — расписание группы</span></li>
+            <li><span class="ico">↗</span><span><b>Группа — отдельной строкой</b> со значком и переходом: клик по преподавателю или группе открывает их расписание</span></li>
             <li><span class="ico">½</span><span><b>Подгруппы</b> — когда группа делится, обе половины видны с кабинетами и преподавателями</span></li>
-            <li><span class="ico">!</span><span><b>Примечания</b> о переносах и заменах — со значком предупреждения</span></li>
+            <li><span class="ico">!</span><span><b>Примечания</b> о переносах и заменах, если колледж их указал: значок на карточке, плашка в подробностях, подсвеченный кабинет</span></li>
           </ul>
         </div>
       </div>
@@ -530,13 +646,14 @@
           <p class="lead rv">На телефоне открывается режим «День». Всё управление — внизу, под большим пальцем: полоса дней недели и переключатель дня. Свайп листает дни, подробности выезжают нижней шторкой.</p>
           <ul class="bullets rv">
             <li><span class="ico">↓</span><span><b>Навигация снизу:</b> стрелки, «День / Неделя» и полоса дней — не нужно тянуться к верху экрана</span></li>
-            <li><span class="ico">⋮</span><span><b>Точки под числом</b> — по одной на каждую пару, в два ряда: первая и вторая смена; пустая точка — свободная пара</span></li>
+            <li><span class="ico">⋮</span><span><b>Точки под числом</b> — по одной на каждую пару; ряды делятся по длинному перерыву, пустая точка — свободная пара</span></li>
             <li><span class="ico">▢</span><span><b>Ярлык на экран:</b> добавьте на главный экран или рабочий стол — откроется как приложение</span></li>
+            <li><span class="ico">⌐</span><span><b>Безопасные зоны:</b> интерфейс не лезет под статус-бар и жестовую полосу</span></li>
           </ul>
         </div>
         <div class="phones rv">
-          <div class="phone"><img src="screenshots/mobile-day-light.webp" alt="День на телефоне, светлая тема" width="780" height="1688" loading="lazy"></div>
-          <div class="phone"><img src="screenshots/mobile-modal-dark.webp" alt="Шторка с подробностями пары, тёмная тема" width="780" height="1688" loading="lazy"></div>
+          <div class="phone phone--baked"><div class="phone__screen"><img src="screenshots/mobile-day-light.webp" alt="День на телефоне, светлая тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
+          <div class="phone phone--dark phone--baked"><div class="phone__screen"><img src="screenshots/mobile-modal-dark.webp" alt="Шторка с подробностями пары, тёмная тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
         </div>
       </div>
     </section>
@@ -547,14 +664,14 @@
         <span class="eyebrow rv">Честное сравнение</span>
         <h2 class="h-lg rv" style="margin-bottom:28px">Было → стало</h2>
         <div class="vs rv">
-          <div class="vs__phone"><p class="vs__label">sielom.ru<span>официальное</span></p><div class="phone" style="width:210px"><img src="screenshots/off-mobile.webp" alt="Официальное расписание на телефоне" width="780" height="1688" loading="lazy"></div></div>
+          <div class="vs__phone"><p class="vs__label">sielom.ru<span>официальное</span></p><div class="phone phone--baked" style="--pw:210px"><div class="phone__screen"><img src="screenshots/off-mobile.webp" alt="Официальное расписание на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div></div>
           <table class="table">
             <thead><tr><th></th><th>sielom.ru/timetable</th><th>Этот проект</th></tr></thead>
             <tbody>
               <tr><td>Текущая пара</td><td class="n">Нет</td><td class="y">Подсветка, таймер, прогресс</td></tr>
               <tr><td>Тёмная тема</td><td class="n">Нет</td><td class="y">Системная / светлая / тёмная</td></tr>
               <tr><td>Подробности пары</td><td class="n">Клик ничего не делает</td><td class="y">Корпус, адрес, ФИО, группы</td></tr>
-              <tr><td>Поиск</td><td class="n">Выбор через корпус и курс</td><td class="y">Мгновенный поиск по тексту</td></tr>
+              <tr><td>Поиск</td><td class="n">Выбор через корпус и курс</td><td class="y">Единый поиск по всем корпусам</td></tr>
               <tr><td>Горячие клавиши</td><td class="n">Нет</td><td class="y">← → T / D Esc</td></tr>
               <tr><td>Пустые пары на телефоне</td><td class="n">Карточки на весь экран</td><td class="y">Только реальные пары</td></tr>
               <tr><td>День / неделя</td><td class="eq">Есть</td><td class="eq">Есть</td></tr>
@@ -562,7 +679,7 @@
               <tr><td>Экспорт в PDF</td><td class="y">Есть</td><td class="n">Пока нет</td></tr>
             </tbody>
           </table>
-          <div class="vs__phone"><p class="vs__label">my-sielom-web<span>этот проект</span></p><div class="phone" style="width:210px"><img src="screenshots/mobile-day-light.webp" alt="Этот проект на телефоне" width="780" height="1688" loading="lazy"></div></div>
+          <div class="vs__phone"><p class="vs__label">my-sielom-web<span>этот проект</span></p><div class="phone phone--baked" style="--pw:210px"><div class="phone__screen"><img src="screenshots/mobile-day-light.webp" alt="Этот проект на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div></div>
         </div>
       </div>
     </section>
@@ -609,7 +726,7 @@
         <div class="stats rv">
           <div class="stat"><b>0</b><span>npm-зависимостей</span></div>
           <div class="stat"><b>4</b><span>файла фронтенда</span></div>
-          <div class="stat"><b>~110 КБ</b><span>исходников целиком</span></div>
+          <div class="stat"><b>~135 КБ</b><span>исходников целиком</span></div>
           <div class="stat"><b>0</b><span>серверного кода</span></div>
         </div>
       </div>
@@ -695,46 +812,54 @@
       else if (e.code === "End") { e.preventDefault(); go(slides.length - 1); }
     });
 
-    // ---------- Демо «живой пары» — та же логика, что в app.js ----------
+    // ---------- Демо «живой пары»: тот же день, та же разметка и те же правила, что в режиме «День» приложения ----------
+    // данные — реальный четверг группы ИС-23/9-2 (как на скриншотах)
     const LESSONS = [
-      { n: 4, s: "13:40", e: "15:00", t: "Проектирование и дизайн информационных систем", room: "115", who: "Гагилев А.Е." },
-      { n: 5, s: "15:20", e: "16:40", t: "Стандартизация, сертификация и техническое документоведение", room: "115", who: "Паланий Н.П." },
-      { n: 6, s: "16:50", e: "18:10", t: "Физическая культура", room: "003", who: "Мандзюк А.А." },
+      { n: 4, s: "13:40", e: "15:00", t: "Тестирование информационных систем", parts: [{ room: "208", who: "Каюк Николай Васильевич" }] },
+      { n: 5, s: "15:20", e: "16:40", t: "Иностранный язык в профессиональной деятельности", parts: [{ sg: 1, room: "105", who: "Шумилова Юлия Олеговна" }, { sg: 2, room: "104", who: "Журавлев Эрик Александрович" }] },
+      { n: 6, s: "16:50", e: "18:10", t: "Проектирование и дизайн информационных систем", parts: [{ room: "209", who: "Гагилев Алексей Евгеньевич" }] },
     ];
+    const STRIP = [["Пн", 26, "ooo", "**o"], ["Вт", 27, "ooo", "***"], ["Ср", 28, "ooo", "***"], ["Чт", 29, "ooo", "***"], ["Пт", 30, "ooo", "***"], ["Сб", 31, "ooo", "***"]];
+    const CLOCK_ICON = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.4"/><path d="M8 4.75V8l2.25 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
     const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
     const fmt = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
     const dur = (m) => m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч${m % 60 ? ` ${m % 60} мин` : ""}`;
-    const tl = $("#tl");
-    tl.innerHTML = LESSONS.map((l, i) => `
-      ${i ? `<div class="break" data-break="${i}"></div>` : ""}
-      <div class="tl-row" data-i="${i}">
-        <div class="tl-time">${l.s}<small>${l.e}</small></div>
-        <span class="tl-dot"></span>
-        <div class="card">
-          <div class="card__chip"></div>
-          <div class="card__title">${l.t}</div>
-          <div class="card__meta"><span class="room">${l.room}</span>${l.who}</div>
-          <div class="card__bar"><i></i></div>
-        </div>
-      </div>`).join("");
+    // фото — из базы сотрудников колледжа (уменьшены до 96×96), как в самом приложении
+    const PHOTOS = { "Каюк Николай Васильевич": "avatars/kayuk.webp", "Шумилова Юлия Олеговна": "avatars/shumilova.webp", "Журавлев Эрик Александрович": "avatars/zhuravlev.webp", "Гагилев Алексей Евгеньевич": "avatars/gagilev.webp" };
+    const avatarHTML = (name) => PHOTOS[name]
+      ? `<span class="avatar avatar--xs"><img src="${PHOTOS[name]}" alt="" width="22" height="22"></span>`
+      : `<span class="avatar avatar--xs" style="--h:${hueOf(name)}">${initialsOf(name)}</span>`;
+    const hueOf = (t) => { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+    const initialsOf = (t) => t.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+    const stripDots = (str) => `<span>${[...str].map((c) => `<i${c === "o" ? ' class="is-empty"' : ""}></i>`).join("")}</span>`;
+    const stripHTML = () => `<div class="strip">${STRIP.map(([w, n, r1, r2]) => `<button class="strip__day${n === 29 ? " is-active is-today" : ""}"><span class="strip__wd">${w}</span><span class="strip__num">${n}</span><span class="strip__dots">${stripDots(r1)}${stripDots(r2)}</span></button>`).join("")}</div>`;
+    const partHTML = (q) => `<li class="part">${q.sg ? `<span class="sg">${q.sg}</span>` : ""}<span class="room">${q.room}</span>${avatarHTML(q.who)}<span class="who">${q.who}</span></li>`;
+    const cardHTML = (l, kind, isNext, cur) => {
+      const s = toMin(l.s), e = toMin(l.e);
+      let chip = "";
+      if (kind === "now") chip = `<span class="chip chip--live">Идёт · ещё ${dur(e - cur)}</span>`;
+      else if (isNext) chip = `<span class="chip chip--next">${s - cur <= 180 ? `Через ${dur(s - cur)}` : "Следующая"}</span>`;
+      const cls = ["lesson", "lesson--full", kind === "now" && "is-now", isNext && "is-next", kind === "past" && "is-past"].filter(Boolean).join(" ");
+      const progress = kind === "now" ? ` style="--progress:${Math.round((cur - s) / (e - s) * 100)}%"` : "";
+      return `<article class="${cls}"${progress}>${chip ? `<div class="lesson__meta">${chip}<span class="grow"></span></div>` : ""}<h3 class="lesson__title">${l.t}</h3><ul class="parts">${l.parts.map(partHTML).join("")}</ul></article>`;
+    };
     const renderDemo = (cur) => {
       $("#demoClock").textContent = fmt(cur);
-      const nextIdx = LESSONS.findIndex((l) => cur < toMin(l.s));
-      const nowIdx = LESSONS.findIndex((l) => cur >= toMin(l.s) && cur <= toMin(l.e));
+      const kinds = LESSONS.map((l) => (cur < toMin(l.s) ? "soon" : cur <= toMin(l.e) ? "now" : "past"));
+      const nextIdx = kinds.includes("now") ? -1 : kinds.indexOf("soon");
+      let rows = "";
       LESSONS.forEach((l, i) => {
-        const row = $(`.tl-row[data-i="${i}"]`, tl), s = toMin(l.s), e = toMin(l.e);
-        const kind = cur < s ? "soon" : cur <= e ? "now" : "past";
-        const isNext = nowIdx === -1 && i === nextIdx;
-        row.className = `tl-row is-${kind}${isNext ? " is-next" : ""}`;
-        const chip = $(".card__chip", row);
-        if (kind === "now") { chip.innerHTML = `<span class="live-dot"></span>Идёт · ещё ${dur(e - cur)}`; $(".card__bar i", row).style.width = `${Math.round((cur - s) / (e - s) * 100)}%`; }
-        else if (isNext) chip.textContent = s - cur <= 180 ? `Через ${dur(s - cur)}` : "Следующая";
-        else chip.textContent = "";
+        if (i) {
+          // перерыв — тоже «момент» на линии: ещё не начался / идёт / прошёл
+          const bs = toMin(LESSONS[i - 1].e), be = toMin(l.s), gap = be - bs;
+          const bk = cur < bs ? "soon" : cur < be ? "now" : "past";
+          const bp = bk === "now" ? ` style="--p:${(cur - bs) / gap}"` : "";
+          rows += `<li class="tl-row tl-row--shift is-${bk}"${bp}><span></span><span class="tl-rail"><span class="tl-dot tl-dot--break"></span></span><div class="shift-divider" role="separator">Перерыв ${dur(gap)}</div></li>`;
+        }
+        const rp = kinds[i] === "now" ? ` style="--p:${(cur - toMin(l.s)) / (toMin(l.e) - toMin(l.s))}"` : "";
+        rows += `<li class="tl-row is-${kinds[i]}"${rp}><div class="tl-time"><span class="tl-start">${l.s}</span><span class="tl-end">${l.e}</span></div><span class="tl-rail"><span class="tl-dot"></span></span><div class="tl-body"><span class="tl-num">${l.n} пара</span>${cardHTML(l, kinds[i], i === nextIdx, cur)}</div></li>`;
       });
-      $$(".break", tl).forEach((b) => {
-        const i = +b.dataset.break, gap = toMin(LESSONS[i].s) - toMin(LESSONS[i - 1].e);
-        b.textContent = `Перемена ${gap} мин`;
-      });
+      $("#appDay").innerHTML = `${stripHTML()}<div class="dv-content"><header class="dv-head"><div><h2 class="dv-title">Четверг</h2><span class="dv-date">29 октября · сегодня</span></div><span class="dv-summary">${CLOCK_ICON}3 пары · 13:40 – 18:10</span></header><ol class="timeline">${rows}</ol></div>`;
     };
     const scrub = $("#scrub");
     scrub.addEventListener("input", () => renderDemo(+scrub.value));
@@ -746,7 +871,7 @@
 
     // ---------- Табы трёх расписаний ----------
     const KIND_COPY = [
-      ["Группы", "Навигация «корпус → курс → группа» с хлебными крошками или мгновенный поиск по названию — клавиша / сразу ставит курсор в поиск."],
+      ["Группы", "Навигация «корпус → курс → группа» с хлебными крошками. Префикс группы вынесен в значок («ЮСО» и «25/11»), так список читается быстрее."],
       ["Преподаватели", "Все пары преподавателя за неделю: аудитории, группы и подгруппы. В официальной версии до преподавателя нельзя дойти из карточки пары — здесь это один клик."],
       ["Кабинеты", "Занятость любой аудитории по корпусам: кто, когда и с какой группой. Удобно, чтобы найти свободный кабинет или понять, куда переехала пара."],
     ];
@@ -756,6 +881,15 @@
       $("#kindCopy").innerHTML = `<b>${KIND_COPY[i][0]}</b>${KIND_COPY[i][1]}`;
     };
     $$("#kindTabs .tab").forEach((t) => t.addEventListener("click", () => showKind(+t.dataset.i)));
+
+    // ---------- Подробности: обычная пара / замена ----------
+    const DETAIL_CAPTION = ["Так выглядят подробности обычной пары.", "Если колледж указал замену, над данными появляется плашка с текстом, а кабинет подсвечивается. Примечание видно и на карточке — значком."];
+    const showDetail = (v) => {
+      $$("#detailShot .tab").forEach((t) => t.setAttribute("aria-selected", +t.dataset.v === v));
+      $$("#detailShot .shot, #detailShot .phone").forEach((e) => (e.hidden = +e.dataset.v !== v));
+      $("#detailCaption").textContent = DETAIL_CAPTION[v];
+    };
+    $$("#detailShot .tab").forEach((t) => t.addEventListener("click", () => showDetail(+t.dataset.v)));
     showKind(0);
 
     // ---------- QR ----------
