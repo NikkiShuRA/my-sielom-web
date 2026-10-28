@@ -527,13 +527,19 @@
   // ---------- Режим «День» ----------
   function stripHTML(days, now) {
     return `<div class="strip" role="tablist" aria-label="Дни недели">${days.map((d, i) => {
-      const count = lessonsByNum(isoDate(d)).size;
+      const have = new Set(lessonsByNum(isoDate(d)).keys());
+      const count = have.size;
+      // точки в два ряда: первая и вторая смена (граница — как в пересменке);
+      // на каждую пару сетки — точка, свободная пара — пустая
+      const row = (second) => `<span>${state.lessonNums
+        .filter((n) => ((state.bells.get(n)?.timeStart ?? "") >= SHIFT_BORDER) === second)
+        .map((n) => `<i${have.has(n) ? "" : ' class="is-empty"'}></i>`).join("")}</span>`;
       const active = i === state.dayIndex;
       return `<button class="strip__day${active ? " is-active" : ""}${isoDate(d) === isoDate(now) ? " is-today" : ""}" data-pick-day="${i}" role="tab" aria-selected="${active}"
           aria-label="${esc(`${WEEKDAYS_FULL[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}: ${count ? `${count} ${plural(count, ["пара", "пары", "пар"])}` : "пар нет"}`)}">
         <span class="strip__wd">${WEEKDAYS[d.getDay()]}</span>
         <span class="strip__num">${d.getDate()}</span>
-        <span class="strip__dots" aria-hidden="true">${"<i></i>".repeat(Math.min(count, 5))}</span>
+        <span class="strip__dots" aria-hidden="true">${row(false)}${row(true)}</span>
       </button>`;
     }).join("")}</div>`;
   }
