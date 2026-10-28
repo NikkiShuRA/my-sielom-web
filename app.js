@@ -829,9 +829,21 @@
     } else {
       week.className = "week";
       week.innerHTML = days.map((d, i) => dayColumnHTML(d, i, now)).join("");
-      // колонка с чипом («Идёт · ещё N мин», «Через N мин») шире остальных, чтобы плашка помещалась целиком
-      const cols = [...week.querySelectorAll(":scope > .day")].map((d) => d.querySelector(".lesson__meta .chip") ? "minmax(330px, 360px)" : "minmax(var(--day-w), 320px)");
-      if (cols.some((c) => c.startsWith("minmax(330"))) week.style.gridTemplateColumns = cols.join(" ");
+      // колонка с чипом («Идёт · ещё N мин», «Через N мин») ровно настолько шире остальных, чтобы шапка пары не ломалась
+      const dayEls = [...week.querySelectorAll(":scope > .day")];
+      const base = parseFloat(getComputedStyle(week).getPropertyValue("--day-w")) || 220;
+      const widths = dayEls.map((d) => {
+        let need = 0;
+        d.querySelectorAll(".lesson__meta").forEach((m) => {
+          if (!m.querySelector(".chip")) return;
+          const extra = d.offsetWidth - m.offsetWidth;
+          m.style.width = "max-content";
+          need = Math.max(need, Math.ceil(m.offsetWidth + extra) + 2);
+          m.style.width = "";
+        });
+        return need;
+      });
+      if (widths.some((w) => w > base)) week.style.gridTemplateColumns = widths.map((w) => w > base ? `${Math.min(w, 360)}px` : "minmax(var(--day-w), 320px)").join(" ");
     }
 
     if (navDir) { void week.offsetWidth; week.dataset.anim = navDir > 0 ? "next" : "prev"; navDir = 0; }
