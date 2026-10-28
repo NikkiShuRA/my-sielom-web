@@ -26,6 +26,7 @@ const MIME = {
   ".gif":  "image/gif",
   ".ico":  "image/x-icon",
   ".webp": "image/webp",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
 };
 const HIDDEN = /^(\.|node_modules|server\.js$)/;
 
@@ -58,8 +59,16 @@ function send(res, status, type, body, cacheState) {
   res.end(body);
 }
 
+function redirect(res, location) {
+  res.writeHead(301, { location });
+  res.end();
+}
+
 async function serveStatic(res, pathname) {
   let rel = decodeURIComponent(pathname);
+  // как на GitHub Pages: презентация из docs/ доступна по /about/
+  if (rel === "/about") return redirect(res, "/about/");
+  if (rel.startsWith("/about/")) rel = "/docs" + rel.slice("/about".length);
   if (rel.endsWith("/")) rel += "index.html";
   const file = path.normalize(path.join(ROOT, rel));
   const relFromRoot = path.relative(ROOT, file);

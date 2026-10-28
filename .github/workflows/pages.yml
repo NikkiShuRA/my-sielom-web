@@ -27,7 +27,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site/about
-          cp -r index.html app.js styles.css fonts.css assets _site/
+          cp -r index.html app.js styles.css fonts.css favicon.ico manifest.webmanifest assets _site/
           cp -r docs/. _site/about/
           touch _site/.nojekyll
 

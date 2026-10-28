@@ -10,6 +10,12 @@
     try { const t = JSON.parse(localStorage.getItem("sielom.theme")); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
   </script>
   <title>СИЭУиП — Расписание</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="48x48 32x32 16x16">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-title" content="Расписание">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://sielom.ru" crossorigin>
   <link rel="preload" href="assets/fonts/inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/wix-madefor-display-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
@@ -113,10 +119,10 @@
           <span class="settings__label">Тема оформления</span>
           <span class="settings__value" id="themeValue">Системная</span>
         </button>
-        <button class="settings__row">
+        <a class="settings__row" href="about/">
           <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.25V11M8 5h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           <span class="settings__label">О приложении</span>
-        </button>
+        </a>
       </div>
     </aside>
 

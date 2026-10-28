@@ -544,6 +544,7 @@ svg { flex-shrink: 0; }
   height: 36px; padding: 0 10px;
   border-radius: var(--r-md);
   text-align: left; font-size: 13px; color: var(--c-text-2);
+  text-decoration: none;
 }
 .settings__row:hover:not(:disabled) { background: var(--c-surface); color: var(--c-text); }
 .settings__icon { color: var(--c-muted); }
