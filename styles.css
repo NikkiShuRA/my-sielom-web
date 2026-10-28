@@ -887,6 +887,15 @@ svg { flex-shrink: 0; }
 /* Точка перерыва: меньше обычной, на одном уровне с подписью «Перерыв N мин» */
 .tl-dot--break { width: 8px; height: 8px; margin-top: 3px; }
 .tl-row--shift.is-now .tl-dot--break { box-shadow: 0 0 0 4px rgba(242, 194, 0, .25); }
+/* пока пара (или перерыв) идёт, точка на линии мигает и расходится кольцом */
+@media (prefers-reduced-motion: no-preference) {
+  .tl-row.is-now .tl-dot, .tl-row--shift.is-now .tl-dot--break { animation: dot-ping 1.6s ease-in-out infinite; }
+  @keyframes dot-ping {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(242, 194, 0, .6); }
+    50% { transform: scale(1.18); box-shadow: 0 0 0 8px rgba(242, 194, 0, .18); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(242, 194, 0, 0); }
+  }
+}
 .tl-row--shift.is-now .tl-rail::before { background: linear-gradient(var(--c-accent-strong) calc(7px + (100% - 7px) * var(--p, 0)), var(--c-line) 0); }
 .tl-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .tl-num { padding-left: 4px; font: 600 11px var(--font-ui); color: var(--c-muted); text-transform: uppercase; letter-spacing: .05em; }

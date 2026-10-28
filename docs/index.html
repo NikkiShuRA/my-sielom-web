@@ -617,9 +617,13 @@
       .hero__chip b.tick { animation: tick .45s var(--ease); }
       @keyframes tick { 0% { transform: translateY(-60%); opacity: 0; } 100% { transform: none; opacity: 1; } }
 
-      /* точка «сейчас» на таймлайне мигает и расходится кольцом */
-      .appview .tl-row.is-now .tl-dot, .appview .tl-row--shift.is-now .tl-dot--break { animation: dot-ping 1.5s ease-out infinite; }
-      @keyframes dot-ping { 0% { box-shadow: 0 0 0 0 rgba(242, 194, 0, .7); opacity: 1; } 45% { opacity: .45; } 70% { box-shadow: 0 0 0 11px rgba(242, 194, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(242, 194, 0, 0); opacity: 1; } }
+      /* точка «сейчас» на таймлайне пульсирует: чуть вырастает и отпускает кольцо */
+      .appview .tl-row.is-now .tl-dot, .appview .tl-row--shift.is-now .tl-dot--break { animation: dot-ping 1.6s ease-in-out infinite; }
+      @keyframes dot-ping {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(242, 194, 0, .6); }
+        50% { transform: scale(1.18); box-shadow: 0 0 0 8px rgba(242, 194, 0, .18); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(242, 194, 0, 0); }
+      }
 
       /* карточки и плитки */
       .tile { transition: transform .35s var(--ease), box-shadow .35s var(--ease); }
