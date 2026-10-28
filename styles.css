@@ -510,6 +510,11 @@ svg { flex-shrink: 0; }
 }
 .list__empty b { font-size: 15px; color: var(--c-text); }
 
+.list__more { padding: 8px 14px; font-size: 12.5px; color: var(--c-muted); }
+.spin--sm { display: inline-block; width: 14px; height: 14px; border-width: 2px; margin-right: 8px; vertical-align: -2px; }
+/* Глобальный поиск идёт по всем корпусам и типам сразу, поэтому вкладки и «хлебные крошки» на время поиска не нужны */
+.sidebar.is-searching .filters, .sidebar.is-searching .crumbs { display: none; }
+
 .list-sep {
   padding: 10px 14px 4px;
   display: flex; align-items: center; gap: 8px;

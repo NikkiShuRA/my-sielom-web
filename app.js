@@ -58,6 +58,7 @@
     bells: new Map(),
     lessonNums: [],
     employeePhotos: new Map(),
+    searchIndex: null, // { weekId, teachers: [], rooms: [] } — для глобального поиска
     error: null,
     loadingWeek: true,
     divisionLoaded: false,
@@ -263,7 +264,7 @@
     const fav = state.favourites.has(key);
     const isSelected = state.selected.kind === e.type && state.selected.id === e.id;
     const isNav = e.type === "division" || e.type === "course";
-    const divAttr = e.divisionId ? ` data-division-id="${esc(e.divisionId)}"` : "";
+    const divAttr = (e.divisionId ? ` data-division-id="${esc(e.divisionId)}"` : "") + (e.course ? ` data-course="${esc(e.course)}"` : "");
     const attrs = `class="entity entity--${e.type}${isSelected ? " is-selected" : ""}" data-type="${e.type}" data-id="${esc(e.id)}" data-title="${esc(e.title)}"${divAttr} tabindex="0"${isSelected ? ' aria-current="true"' : ""}`;
     const tail = isNav
       ? `<span class="entity__chev">${ICON.chevron}</span>`
@@ -299,7 +300,7 @@
         const g = state.groups.find((x) => x.id_1c === id);
         if (g) {
           const div = divisionById(g.divisionId);
-          byType.group.push({ type: "group", id: g.id_1c, title: g.name, hint: div ? divisionDisplayLabel(div) : "", divisionId: g.divisionId });
+          byType.group.push({ type: "group", id: g.id_1c, title: g.name, hint: div ? divisionDisplayLabel(div) : "", divisionId: g.divisionId, course: g.course });
         }
       } else if (type === "room") {
         const cab = state.cabinets.get(id);
@@ -313,8 +314,93 @@
     return byType;
   }
 
+  // ---------- Глобальный поиск ----------
+  // Группы берём из общего списка, преподавателей и кабинеты — из занятий всех корпусов за текущую неделю
+  const normText = (t) => String(t || "").toLowerCase().replace(/ё/g, "е");
+  const SEARCH_LIMIT = 25;
+  let searchIndexPromise = null, searchIndexWeek = null;
+
+  function ensureSearchIndex() {
+    const weekId = state.week?.id;
+    if (!weekId || !state.divisions.length || searchIndexWeek === weekId) return searchIndexPromise;
+    searchIndexWeek = weekId;
+    searchIndexPromise = (async () => {
+      const parts = await Promise.all(state.divisions.map((d) =>
+        apiFetch(`${API}/lessons/division?divisionName=${q(d.name)}&week_id=${weekId}`).then((l) => [d, l]).catch(() => [d, []])));
+      const teachers = new Map(), rooms = new Map();
+      for (const [d, lessons] of parts) {
+        for (const l of lessons) {
+          if (l.teacher?.name) {
+            const t = teachers.get(l.teacher.name) || { name: l.teacher.name, byDiv: new Map() };
+            t.byDiv.set(d.id_1c, (t.byDiv.get(d.id_1c) || 0) + 1);
+            teachers.set(l.teacher.name, t);
+          }
+          if (l.cabinet && !rooms.has(l.cabinet.id_1c)) {
+            rooms.set(l.cabinet.id_1c, { ...l.cabinet, divisionId: d.id_1c });
+            if (!state.cabinets.has(l.cabinet.id_1c)) state.cabinets.set(l.cabinet.id_1c, { ...l.cabinet, divisionId: d.id_1c });
+          }
+        }
+      }
+      state.searchIndex = {
+        weekId,
+        teachers: [...teachers.values()].map((t) => ({ name: t.name, divisionId: [...t.byDiv.entries()].sort((a, b) => b[1] - a[1])[0][0] })),
+        rooms: [...rooms.values()],
+      };
+      if (state.query.trim()) renderList();
+    })().catch(() => { searchIndexWeek = null; });
+    return searchIndexPromise;
+  }
+
+  function searchResults(needle) {
+    const tokens = normText(needle).split(/\s+/).filter(Boolean);
+    // по названию ищем любой фрагмент, по подсказке (корпус, адрес) — только от 3 символов, чтобы «1» не цеплял адреса
+    const hit = (title, hint = "") => {
+      const a = normText(title), b = normText(hint);
+      return tokens.every((t) => a.includes(t) || (t.length >= 3 && b.includes(t)));
+    };
+    const rank = (title) => (normText(title).startsWith(tokens[0]) ? 0 : 1);
+    const sortHits = (arr) => arr.sort((a, b) => rank(a.title) - rank(b.title) || naturalSort(a.title, b.title));
+
+    const groups = sortHits(state.groups.map((g) => {
+      const div = divisionById(g.divisionId);
+      return { type: "group", id: g.id_1c, title: g.name, hint: [div ? divisionDisplayLabel(div) : "", g.course ? `${g.course} курс` : ""].filter(Boolean).join(" · "), divisionId: g.divisionId, course: g.course };
+    }).filter((e) => hit(e.title, e.hint)));
+
+    const idx = state.searchIndex;
+    const teachers = idx ? sortHits(idx.teachers.map((t) => ({ type: "teacher", id: t.name, title: t.name, parts: t.name.split(/\s+/), divisionId: t.divisionId }))
+      .filter((e) => hit(e.title))) : [];
+    const rooms = idx ? sortHits(idx.rooms
+      .filter((c) => !/^дистант$/i.test(c.number || c.name))
+      .map((c) => {
+        const num = c.number || c.name;
+        const addr = divisionAddrPart(divisionById(c.divisionId));
+        return { type: "room", id: c.id_1c, title: num.replace(/^[А-Яа-яA-Za-z]+-/, ""), hint: c.number ? `${c.number}${addr ? " · " + addr : ""}` : c.name, divisionId: c.divisionId, full: num };
+      })
+      .filter((e) => hit(`${e.title} ${e.full}`, e.hint))) : [];
+    return { groups, teachers, rooms, ready: !!idx };
+  }
+
+  function renderSearchResults(list, needle) {
+    const { groups, teachers, rooms, ready } = searchResults(needle);
+    const sections = [["Группы", groups], ["Преподаватели", teachers], ["Кабинеты", rooms]];
+    let html = "";
+    for (const [label, items] of sections) {
+      if (!items.length) continue;
+      html += `<li class="list-sep" aria-hidden="true"><span>${esc(label)}</span></li>`;
+      html += items.slice(0, SEARCH_LIMIT).map((e) => entityItemHTML(e)).join("");
+      if (items.length > SEARCH_LIMIT) html += `<li class="list__more">Ещё ${items.length - SEARCH_LIMIT} — уточните запрос</li>`;
+    }
+    if (!ready) {
+      html += state.week
+        ? '<li class="list__more"><span class="spin spin--sm"></span>Ищем преподавателей и кабинеты…</li>'
+        : '<li class="list__more">Преподаватели и кабинеты недоступны: расписание на эту неделю ещё не опубликовано</li>';
+    }
+    list.innerHTML = html || listMessage("Ничего не найдено", "Попробуйте изменить запрос");
+  }
+
   function renderList() {
     const list = $("#list");
+    $("#sidebar").classList.toggle("is-searching", !!state.query.trim() && !state.onlyFav);
     const needle = state.query.trim().toLowerCase();
 
     if (state.onlyFav) {
@@ -336,18 +422,18 @@
       return;
     }
 
-    let items = entitiesForTab();
-    if (needle) items = items.filter((e) => `${e.title} ${e.hint || ""}`.toLowerCase().includes(needle));
-
     if (state.error && !state.divisions.length) {
       list.innerHTML = listMessage("Не удалось загрузить данные", "Проверьте соединение и обновите страницу");
       return;
     }
+    if (needle) { renderSearchResults(list, needle); return; }
+
+    const items = entitiesForTab();
     if (!items.length) {
       const loading = !state.divisions.length || (state.divisionId && state.tab !== "group" && !state.divisionLoaded);
       list.innerHTML = loading
         ? '<li class="sk sk--row"></li>'.repeat(6)
-        : listMessage("Ничего не найдено", needle ? "Попробуйте изменить запрос" : "");
+        : listMessage("Ничего не найдено", "");
       return;
     }
 
@@ -799,6 +885,7 @@
       if (token !== weekToken) return;
       await refreshDivisionLessons(token);
       buildBells();
+      if (state.query.trim()) ensureSearchIndex();
     } catch (e) {
       if (token !== weekToken) return;
       state.error = e;
@@ -889,10 +976,16 @@
   $("#search").addEventListener("input", (e) => {
     state.query = e.target.value;
     $("#searchClear").hidden = !e.target.value;
+    if (state.query.trim()) ensureSearchIndex();
     renderList();
   });
+  $("#search").addEventListener("focus", () => ensureSearchIndex());
   $("#search").addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && e.target.value) { e.stopPropagation(); clearSearch(); renderList(); }
+    if (e.key === "Escape" && e.target.value) { e.stopPropagation(); clearSearch(); renderList(); return; }
+    // Enter — открыть первый результат, ↓ — перейти к списку
+    const first = $("#list .entity");
+    if (e.key === "Enter" && first && state.query.trim()) { e.preventDefault(); first.click(); }
+    else if (e.key === "ArrowDown" && first) { e.preventDefault(); first.focus(); }
   });
   $("#searchClear").addEventListener("click", (e) => {
     e.preventDefault();
@@ -1024,7 +1117,13 @@
     }
 
     const selDivId = item.dataset.divisionId || state.divisionId;
-    if (item.dataset.divisionId) state.divisionId = item.dataset.divisionId;
+    if (item.dataset.divisionId) {
+      // результат поиска или избранное: сайдбар переходит к месту выбранного элемента
+      state.divisionId = item.dataset.divisionId;
+      state.tab = type;
+      state.courseFilter = type === "group" ? (item.dataset.course ?? state.courseFilter) : null;
+    }
+    if (state.query) clearSearch();
     state.selected = { kind: type, id: item.dataset.id, title: item.dataset.title, divisionId: selDivId };
     store.set("sielom.selection", state.selected);
     setDrawer(false);
