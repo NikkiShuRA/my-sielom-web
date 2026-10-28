@@ -929,6 +929,7 @@
   mobileMQ.addEventListener("change", () => setDrawer(false));
 
   let _sidebarTimer = null;
+  $("#sidebarClose").addEventListener("click", () => $("#sidebarToggle").click());
   $("#sidebarToggle").addEventListener("click", () => {
     const app = $("#app");
     if (mobileMQ.matches) { setDrawer(!app.classList.contains("is-drawer-open")); return; }
