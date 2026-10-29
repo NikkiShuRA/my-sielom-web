@@ -619,8 +619,8 @@
       </article>`;
   }
 
-  function slotHTML(num) {
-    const bells = state.bells.get(num);
+  function slotHTML(num, iso) {
+    const bells = bellAt(iso, num);
     return `<div class="slot" aria-hidden="true">
       <span class="slot__num">${num}</span>
       ${bells ? `<span class="slot__time">${esc(bells.timeStart)} – ${esc(bells.timeEnd)}</span>` : ""}
@@ -657,21 +657,22 @@
     const isToday = iso === isoDate(now);
     const byNum = lessonsByNum(iso);
     const next = nextNum(byNum, date, now);
+    const weekDays = weekDates();
 
     // Карточки лежат прямо в колонке: строки сетки общие для всех дней (subgrid),
     // поэтому высота строки равна самой высокой карточке среди дней
     const items = [];
     let prevNum = null;
     for (const num of state.lessonNums) {
-      if (prevNum !== null && gapBetween(prevNum, num) >= LONG_BREAK) {
+      if (prevNum !== null && breakRow(prevNum, num, weekDays)) {
         // строка-разделитель общая для всех дней (чтобы сетка была ровной), а подпись — реальный перерыв этого дня
-        const a = byNum.get(prevNum)?.[0] || state.bells.get(prevNum), b = byNum.get(num)?.[0] || state.bells.get(num);
-        items.push(breakDividerHTML(a && b ? toMin(b.timeStart) - toMin(a.timeEnd) : gapBetween(prevNum, num)));
+        const a = byNum.get(prevNum)?.[0] || bellAt(iso, prevNum), b = byNum.get(num)?.[0] || bellAt(iso, num);
+        items.push(breakDividerHTML(a && b ? toMin(b.timeStart) - toMin(a.timeEnd) : gapBetween(prevNum, num, iso)));
       }
       prevNum = num;
 
       const lessons = byNum.get(num);
-      if (!lessons) { items.push(slotHTML(num)); continue; }
+      if (!lessons) { items.push(slotHTML(num, iso)); continue; }
       items.push(lessonCardHTML(lessons, date, now, { next: num === next }));
     }
     const rows = 1 + items.length; // шапка + строки пар
@@ -696,7 +697,7 @@
   function stripHTML(days, now, mod = "") {
     const segments = [[]];
     state.lessonNums.forEach((n, i) => {
-      if (i && gapBetween(state.lessonNums[i - 1], n) >= LONG_BREAK) segments.push([]);
+      if (i && breakRow(state.lessonNums[i - 1], n, days)) segments.push([]);
       segments.at(-1).push(n);
     });
     return `<div class="strip${mod ? ` strip--${mod}` : ""}" role="tablist" aria-label="Дни недели">${days.map((d, i) => {
@@ -741,12 +742,12 @@
       let rows = "";
       let prevNum = null;
       for (const num of state.lessonNums.slice(from, to + 1)) {
-        const bells = state.bells.get(num);
+        const bells = bellAt(iso, num);
         const lessons = byNum.get(num);
         const time = lessons ? lessons[0] : bells; // у пары может быть своё время, отличное от общей сетки звонков
         if (prevNum !== null) {
-          const prevTime = byNum.get(prevNum)?.[0] || state.bells.get(prevNum);
-          const gap = prevTime && time ? toMin(time.timeStart) - toMin(prevTime.timeEnd) : gapBetween(prevNum, num);
+          const prevTime = byNum.get(prevNum)?.[0] || bellAt(iso, prevNum);
+          const gap = prevTime && time ? toMin(time.timeStart) - toMin(prevTime.timeEnd) : gapBetween(prevNum, num, iso);
           if (gap >= SHOW_BREAK) {
             // перерыв — тоже «момент» на линии: ещё не начался / идёт / прошёл, со своей точкой и прогрессом
             const bt = prevTime && time ? timing({ timeStart: prevTime.timeEnd, timeEnd: time.timeStart }, date, now) : null;
@@ -1264,15 +1265,53 @@
   }
 
   // ---------- Данные ----------
-  function buildBells() {
-    const map = new Map();
-    for (const l of [...state.lessons, ...state.divisionLessons]) {
-      if (!map.has(l.lessonNumber)) map.set(l.lessonNumber, { timeStart: l.timeStart, timeEnd: l.timeEnd });
+  // Звонки для пустых слотов («окно», сетка недели). В корпусе одновременно живут несколько сеток звонков:
+  // пары по 80 мин, по 60 мин (в понедельник весь день), сдвинутая на 10–20 мин. Время «любой» пары с этим номером
+  // бывает чужим, поэтому берём: время из самих пар расписания, а для остальных номеров — время из сетки,
+  // по которой учатся группы, чьи пары совпадают с выбранными. Нет совпадений (корпус целиком, пустой день) —
+  // самое частое время в корпусе. Считается и для недели целиком, и отдельно для каждого дня.
+  function gridTimes(own, division) {
+    const key = (l) => `${l.lessonNumber}|${l.timeStart}-${l.timeEnd}`;
+    const modeOf = (lessons) => {
+      const byNum = new Map();
+      for (const l of lessons) {
+        if (!byNum.has(l.lessonNumber)) byNum.set(l.lessonNumber, new Map());
+        const c = byNum.get(l.lessonNumber), t = `${l.timeStart}|${l.timeEnd}`;
+        c.set(t, (c.get(t) || 0) + 1);
+      }
+      return new Map([...byNum].map(([n, c]) => {
+        const [timeStart, timeEnd] = [...c].sort((x, y) => y[1] - x[1])[0][0].split("|");
+        return [n, { timeStart, timeEnd }];
+      }));
+    };
+    const ownKeys = new Set(own.map(key));
+    const groups = new Map();
+    for (const l of division) {
+      const g = l.group?.id_1c || l.group?.name;
+      if (!g) continue;
+      if (!groups.has(g)) groups.set(g, { keys: new Set(), lessons: [] });
+      const e = groups.get(g);
+      e.keys.add(key(l)); e.lessons.push(l);
     }
-    state.bells = map;
-    state.lessonNums = [...map.keys()].sort((a, b) => a - b);
-    state.breaks = computeBreaks([...state.lessons, ...state.divisionLessons]);
+    const scored = [...groups.values()].map((g) => ({ g, score: [...g.keys].filter((k) => ownKeys.has(k)).length }));
+    const best = Math.max(0, ...scored.map((x) => x.score));
+    const sameGrid = best ? scored.filter((x) => x.score >= Math.max(1, best / 2)).flatMap((x) => x.g.lessons) : division;
+    const fromOwn = modeOf(own), fromGrid = modeOf(sameGrid), fromAll = modeOf([...own, ...division]);
+    return new Map([...fromAll.keys()].map((n) => [n, fromOwn.get(n) || fromGrid.get(n) || fromAll.get(n)]));
   }
+
+  function buildBells() {
+    const own = state.lessons, division = state.divisionLessons;
+    state.bells = gridTimes(own, division);
+    state.lessonNums = [...state.bells.keys()].sort((a, b) => a - b);
+    state.breaks = computeBreaks([...own, ...division]);
+    // у каждого дня своя сетка (понедельник короче остальных), поэтому «окна» подписываем временем этого дня
+    state.bellsByDay = new Map();
+    for (const iso of new Set([...own, ...division].map((l) => l.date))) {
+      state.bellsByDay.set(iso, gridTimes(own.filter((l) => l.date === iso), division.filter((l) => l.date === iso)));
+    }
+  }
+  const bellAt = (iso, num) => state.bellsByDay?.get(iso)?.get(num) || state.bells.get(num);
 
   // Типичный перерыв после каждой пары: для каждого корпуса берём самое частое время пары,
   // считаем разрыв до следующей и берём медиану по корпусам (в разных корпусах пары идут в разное время)
@@ -1300,12 +1339,14 @@
     return new Map([...gaps].map(([n, a]) => [n, median(a)]));
   }
 
-  // Перерыв между парами prev и num (мин) для общей сетки недели
-  function gapBetween(prev, num) {
-    if (num === prev + 1 && state.breaks.has(prev)) return state.breaks.get(prev);
-    const a = state.bells.get(prev), b = state.bells.get(num);
-    return a && b ? toMin(b.timeStart) - toMin(a.timeEnd) : 0;
+  // Перерыв между парами prev и num (мин) в указанный день: по звонкам этого дня, а если их нет — по типичному перерыву
+  function gapBetween(prev, num, iso) {
+    const a = iso ? bellAt(iso, prev) : state.bells.get(prev), b = iso ? bellAt(iso, num) : state.bells.get(num);
+    if (a && b) return toMin(b.timeStart) - toMin(a.timeEnd);
+    return num === prev + 1 ? state.breaks.get(prev) ?? 0 : 0;
   }
+  // Строка «длинный перерыв» общая для всех дней недели (сетка выравнивается по ней): нужна, если хотя бы в один день перерыв не короче LONG_BREAK
+  const breakRow = (prev, num, days) => days.some((d) => gapBetween(prev, num, isoDate(d)) >= LONG_BREAK);
   const breakDividerHTML = (min) => `<div class="shift-divider" role="separator">Перерыв ${fmtDuration(min)}</div>`;
 
   let weekToken = 0;
