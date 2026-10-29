@@ -1,3 +1,8 @@
+/*
+ * Мой Сиелом — неофициальное расписание СИЭУиП
+ * Copyright © 2026 NikkiShuRA · https://github.com/NikkiShuRA/my-sielom-web
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 // Статика + прокси к sielom.ru schedule API и strapi.sielom.ru (CORS-обход).
 // Запуск: node server.js  →  http://localhost:5500
 const http = require("node:http");

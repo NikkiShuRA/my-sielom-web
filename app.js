@@ -1,3 +1,8 @@
+/*
+ * Мой Сиелом — неофициальное расписание СИЭУиП
+ * Copyright © 2026 NikkiShuRA · https://github.com/NikkiShuRA/my-sielom-web
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 (() => {
   const $ = (s, root = document) => root.querySelector(s);
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
