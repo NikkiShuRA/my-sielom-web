@@ -47,7 +47,7 @@
       <!-- Заголовок расписания и навигация по периоду -->
       <header class="topbar">
         <div class="topbar__title">
-          <span class="topbar__kind" id="entityKind">Группа</span>
+          <span class="topbar__kind"><span id="entityKind">Группа</span><span class="mine-mark" id="mineMark"></span></span>
           <span class="topbar__name" id="entityName">…</span>
         </div>
 
@@ -59,9 +59,11 @@
             <button class="pager__btn" id="prevWeek" aria-label="Назад" title="Назад (←)">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            <div class="pager__label" aria-live="polite">
+            <div class="pager__label" id="periodBox" aria-live="polite">
               <span class="pager__main" id="periodLabel">—</span>
               <span class="pager__sub" id="periodSub"></span>
+              <!-- на телефоне кнопки «Сегодня» в шапке нет: подпись пейджера сама возвращает к сегодня -->
+              <span class="pager__back" aria-hidden="true">К сегодня</span>
             </div>
             <button class="pager__btn" id="nextWeek" aria-label="Вперёд" title="Вперёд (→)">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -76,6 +78,10 @@
             <button class="segmented__btn" data-view="week" role="tab">Неделя</button>
           </div>
           </div>
+
+          <button class="icon-btn me-btn" id="meBtn" aria-label="Моё расписание" title="Моё расписание (M)">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="7" r="3.25" stroke="currentColor" stroke-width="1.6"/><path d="M3.75 16.5c.9-2.9 3.3-4.5 6.25-4.5s5.35 1.6 6.25 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
         </div>
       </header>
     </div>
@@ -98,6 +104,16 @@
         </button>
       </div>
 
+      <!-- Два раздела панели: личное (профиль, курируемые группы, избранное) и каталог всех расписаний с поиском -->
+      <div class="segmented segmented--side" id="sideTabs" role="tablist" aria-label="Раздел панели">
+        <span class="segmented__thumb" aria-hidden="true"></span>
+        <button class="segmented__btn" data-side="mine" role="tab">Моё</button>
+        <button class="segmented__btn" data-side="all" role="tab">Все расписания</button>
+      </div>
+
+      <!-- Быстрый доступ из профиля: своя группа / своё расписание и группы, которые курирует преподаватель -->
+      <section class="mine" id="mine" aria-label="Моё расписание"></section>
+
       <label class="search">
         <svg class="search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.75" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         <input id="search" type="search" placeholder="Группа, преподаватель, кабинет" autocomplete="off" aria-label="Поиск по группам, преподавателям и кабинетам">
@@ -114,9 +130,6 @@
           <button class="segmented__btn tabs__btn" data-tab="teacher" role="tab">Преподаватели</button>
           <button class="segmented__btn tabs__btn" data-tab="room" role="tab">Кабинеты</button>
         </div>
-        <button class="fav-filter" id="favFilter" aria-pressed="false" aria-label="Только избранное" title="Только избранное">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 2.75C4 2.34 4.34 2 4.75 2h6.5c.41 0 .75.34.75.75V14l-4-2.25L4 14V2.75z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-        </button>
       </div>
 
       <nav class="crumbs" aria-label="Навигация по списку">
@@ -169,6 +182,23 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=4"></script>
+  <!-- Профиль: кто я и что держать под рукой -->
+  <dialog class="modal" id="profileModal" aria-labelledby="pTitle">
+    <form method="dialog" class="modal__inner">
+      <span class="modal__grip" aria-hidden="true"></span>
+      <div class="modal__top">
+        <div class="modal__head" tabindex="-1" autofocus>
+          <div class="modal__subject" id="pTitle">Профиль</div>
+          <div class="modal__sub">Хранится только в этом браузере</div>
+        </div>
+        <button class="modal__x" aria-label="Закрыть">
+          <svg width="12" height="12" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal__body" id="pBody"></div>
+    </form>
+  </dialog>
+
+  <script src="app.js?v=23"></script>
 </body>
 </html>
