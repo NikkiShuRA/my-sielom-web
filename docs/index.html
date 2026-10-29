@@ -4,19 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Мой Сиелом — презентация</title>
-  <meta name="description" content="Неофициальный клиент расписания Сургутского института экономики, управления и права: живая текущая пара, свободные кабинеты всего корпуса, гибкий поиск, тёмная тема и мобильная версия. Со стендом, где можно двигать время.">
-  <meta property="og:title" content="Мой Сиелом — расписание СИЭУиП так, как должно быть">
-  <meta property="og:description" content="Неофициальный клиент расписания СИЭУиП: живая пара, свободные кабинеты корпуса, гибкий поиск, тёмная тема, мобильная версия и стенд со временем.">
-  <meta property="og:image" content="screenshots/day-light.webp">
+  <meta name="description" content="Неофициальное расписание Сургутского института экономики, управления и права: личный профиль без регистрации, живая текущая пара, свободные кабинеты корпуса, гибкий поиск, тёмная тема. Только данные с sielom.ru, ничего додуманного.">
+  <meta property="og:title" content="Мой Сиелом — твоё расписание СИЭУиП, живое и честное">
+  <meta property="og:description" content="Профиль без регистрации, текущая пара с таймером, свободные кабинеты корпуса и сводка недели. Только данные с sielom.ru.">
+  <meta property="og:image" content="screenshots/profile-light.webp">
   <meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <script>
     try { const t = localStorage.getItem("deck.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Wix+Madefor+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- те же локальные шрифты, что у приложения: без запросов к Google -->
+  <link rel="stylesheet" href="../fonts.css">
   <style>
     /* ===== Токены — те же, что в самом приложении ===== */
     :root {
@@ -638,6 +637,40 @@
       .key-row { transition: transform .25s var(--ease), background .25s var(--ease); }
     }
     @media (hover: none) { .hero__glow i { filter: blur(60px); } }
+
+    /* ===== Обложка: короткие обещания под кнопками ===== */
+    .trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; margin-top: 22px; font-size: 14px; color: var(--c-text-2); }
+    .trust span { display: inline-flex; align-items: center; gap: 8px; }
+    .trust span::before { content: ""; width: 18px; height: 18px; border-radius: 50%; background: var(--c-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.3l2.6 2.5L13 6.4' fill='none' stroke='%2333332f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat; }
+
+    /* ===== Профиль «Моё» ===== */
+    .me { position: relative; }
+    .me__phones { position: absolute; left: -4%; bottom: -10%; z-index: 2; display: grid; }
+    .me__phones .phone { grid-area: 1 / 1; --pw: min(170px, 19vw); transition: opacity .45s var(--ease), transform .45s var(--ease); }
+    .me__phones .phone.is-off { opacity: 0; transform: translateY(18px) scale(.96); pointer-events: none; }
+    .privacy { margin-top: 22px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--c-bg); box-shadow: var(--sh-sm); display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: center; font-size: 14.5px; color: var(--c-text-2); }
+    .privacy b { color: var(--c-text); }
+    .privacy__ico { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--c-accent-tint); color: var(--c-accent-ink); }
+    @media (max-width: 900px) { .me__phones { position: static; margin-top: 18px; justify-items: center; } .me__phones .phone { --pw: min(200px, 54vw); } }
+
+    /* ===== Честные данные: «в API» → «на сайте» ===== */
+    .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 36px; }
+    @media (max-width: 1100px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .facts { grid-template-columns: 1fr; } }
+    .fact { display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: var(--r-lg); background: var(--c-bg); box-shadow: var(--sh-sm); }
+    .fact__api { display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: var(--c-muted); }
+    .fact__api b { flex: none; padding: 3px 7px; border-radius: 6px; background: var(--c-surface-2); color: var(--c-text-2); font: 700 10.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+    .fact__api code { font: 500 12.5px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--c-text-2); overflow-wrap: anywhere; }
+    .fact__screen { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 12px; border-radius: var(--r-md); background: var(--c-canvas); }
+    .fact h3 { font-size: 16.5px; letter-spacing: -.01em; }
+    .fact p { font-size: 14px; color: var(--c-text-2); margin-top: -6px; }
+    .appview .shift-divider.is-overlap { color: var(--c-warn); }
+    .appview .shift-divider.is-overlap::before, .appview .shift-divider.is-overlap::after { background: var(--c-warn-line); }
+    .appview .slot { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: var(--r-lg); border: 1px dashed var(--c-line-strong); color: var(--c-muted); font-size: 13px; }
+    .appview .slot b { font-weight: 800; color: var(--c-faint); font-variant-numeric: tabular-nums; }
+    .appview .muted-who { color: var(--c-muted); font-style: italic; }
+    .appview .notice { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-radius: var(--r-lg); background: var(--c-surface); font-size: 13px; color: var(--c-text-2); }
+    .appview .notice b { color: var(--c-text); }
   </style>
 </head>
 <body>
@@ -664,17 +697,18 @@
       <div class="hero__glow" aria-hidden="true"><i></i><i></i></div>
       <div class="slide__inner">
         <a class="eyebrow rv" href="https://sielom.ru/" target="_blank" rel="noopener"><img class="eyebrow__logo" src="edu-logo.webp" alt="" width="18" height="18">Сургутский институт экономики, управления и права</a>
-        <h1 class="h-xl rv">Расписание,<br>которое <span class="mark">понимает время</span></h1>
-        <p class="lead rv"><b>Мой Сиелом</b> — неофициальный клиент расписания <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a>. Те же данные, что на sielom.ru, — но с живой текущей парой, свободными кабинетами всего корпуса, тёмной темой и нормальной мобильной версией.</p>
+        <h1 class="h-xl rv">Открыл —<br>и <span class="mark">всё понятно</span></h1>
+        <p class="lead rv"><b>Мой Сиелом</b> — неофициальное расписание <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a>. Сразу твоя группа или твои пары: какая идёт, сколько осталось, в каком кабинете следующая и где в корпусе свободно.</p>
         <div class="hero__cta rv">
           <a class="pill-btn pill-btn--accent" href="https://nikkishura.github.io/my-sielom-web/" target="_blank" rel="noopener">Открыть расписание →</a>
           <a class="pill-btn" href="../demo.html" target="_blank" rel="noopener" title="Приложение в рамке устройства с ползунком времени. Только для компьютера">Стенд со временем</a>
           <a class="pill-btn" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">GitHub</a>
         </div>
+        <p class="trust rv"><span>Без регистрации</span><span>Только данные sielom.ru</span><span>Телефон и компьютер</span><span>Бесплатно и с открытым кодом</span></p>
         <div class="hero__stage rv">
-          <div class="shot"><img src="screenshots/week-light.webp" alt="Расписание группы на неделю, светлая тема" width="1600" height="1000"></div>
+          <div class="shot"><img src="screenshots/profile-light.webp" alt="Профиль группы: идущая пара с таймером, кабинет и пары на сегодня" width="1600" height="1000"></div>
           <div class="phone phone--dark phone--baked"><div class="phone__screen"><img src="screenshots/mobile-day-dark.webp" alt="Режим «День» на телефоне, тёмная тема" width="780" height="1688"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
-          <div class="hero__chip"><span class="live-dot"></span>Идёт · ещё <b id="heroLeft">38</b> мин<span>4 пара · ауд. 208</span></div>
+          <div class="hero__chip"><span class="live-dot"></span>Идёт · ещё <b id="heroLeft">38</b> мин<span>4 пара · каб. 208</span></div>
         </div>
       </div>
     </section>
@@ -703,11 +737,39 @@
       </div>
     </section>
 
-    <!-- 3. Живая пара -->
+    <!-- 3. Профиль -->
+    <section class="slide" id="s-me" data-title="Профиль «Моё»">
+      <div class="slide__inner split split--rev">
+        <div class="me rv">
+          <div class="tab-stage" id="meStage">
+            <div class="shot"><img src="screenshots/profile-light.webp" alt="Профиль студента: идущая пара, кабинет и пары на сегодня" width="1600" height="1000" loading="lazy"></div>
+            <div class="shot" hidden><img src="screenshots/profile-teacher-dark.webp" alt="Профиль преподавателя: идущая пара и группы на сегодня, тёмная тема" width="1600" height="1000" loading="lazy"></div>
+            <div class="shot" hidden><img src="screenshots/profile-week-light.webp" alt="Сводка недели: пары, часы, окна и предметы с преподавателями" width="1600" height="1000" loading="lazy"></div>
+          </div>
+          <div class="me__phones" id="mePhones">
+            <div class="phone phone--baked" data-v="0"><div class="phone__screen"><img src="screenshots/mobile-profile-light.webp" alt="Профиль студента на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
+            <div class="phone phone--dark phone--baked is-off" data-v="1"><div class="phone__screen"><img src="screenshots/mobile-profile-dark.webp" alt="Профиль преподавателя на телефоне, тёмная тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
+          </div>
+        </div>
+        <div>
+          <span class="eyebrow rv">Новое · профиль «Моё»</span>
+          <h2 class="h-lg rv">Твоё расписание <span class="mark">встречает тебя</span></h2>
+          <div class="tabs rv" role="tablist" id="meTabs">
+            <button class="tab" role="tab" aria-selected="true" data-i="0">Студент</button>
+            <button class="tab" role="tab" aria-selected="false" data-i="1">Преподаватель</button>
+            <button class="tab" role="tab" aria-selected="false" data-i="2">Неделя</button>
+          </div>
+          <div class="tab-copy rv" id="meCopy"></div>
+          <div class="privacy rv"><span class="privacy__ico"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="3.5" y="8" width="11" height="7.5" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M6 8V5.8a3 3 0 0 1 6 0V8" stroke="currentColor" stroke-width="1.6"/></svg></span><span><b>Без аккаунта и пароля.</b> Профиль хранится только в вашем браузере: никто другой его не видит и не может изменить.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Живая пара -->
     <section class="slide" id="s-live" data-title="Живая пара">
       <div class="slide__inner split">
         <div>
-          <span class="eyebrow rv">Главная фича</span>
+          <span class="eyebrow rv">Живая пара</span>
           <h2 class="h-lg rv">Сразу видно, <span class="mark">что сейчас</span></h2>
           <p class="lead rv">Расписание пересчитывается каждую минуту. Текущая пара подсвечена, внизу полоса прогресса, следующая помечена «через N мин», а прошедшие — приглушены и зачёркнуты.</p>
           <ul class="bullets rv">
@@ -739,7 +801,7 @@
         <div>
           <span class="eyebrow rv">Два режима · три темы</span>
           <h2 class="h-lg rv">Вся неделя одним взглядом</h2>
-          <p class="lead rv">«Неделя» — единая сетка: пары с одним номером лежат на одной линии, а строка подстраивается под самую высокую карточку. Сегодня выделено жёлтым, прошедшие пары приглушены, пустой день отмечен чашкой. «День» — таймлайн с подробностями. Режим запоминается.</p>
+          <p class="lead rv">«Неделя» — единая сетка: пары с одним номером лежат на одной линии, а строка подстраивается под самую высокую карточку. Сегодня выделено жёлтым, прошедшие пары приглушены, пустые пары подписаны «нет пары», а пустой день отмечен чашкой. «День» — таймлайн с подробностями. Режим запоминается.</p>
           <ul class="bullets rv">
             <li><span class="ico">◐</span><span><b>Системная, светлая или тёмная</b> тема — применяется до отрисовки, без белой вспышки</span></li>
             <li><span class="ico">⇆</span><span><b>Перетаскивание мышью</b> по сетке недели и свайпы по дням на телефоне</span></li>
@@ -786,7 +848,7 @@
           </div>
         </div>
         <div>
-          <span class="eyebrow rv">Новое · весь корпус</span>
+          <span class="eyebrow rv">Весь корпус</span>
           <h2 class="h-lg rv">Где сейчас свободно? <span class="mark">Видно сразу.</span></h2>
           <div class="tabs rv" role="tablist" id="bldTabs">
             <button class="tab" role="tab" aria-selected="true" data-i="0">Шахматка</button>
@@ -820,13 +882,75 @@
       </div>
     </section>
 
+    <!-- Честные данные -->
+    <section class="slide" id="s-truth" data-title="Честные данные">
+      <div class="slide__inner">
+        <span class="eyebrow rv">Принцип</span>
+        <h2 class="h-lg rv">Ничего <span class="mark">не додумывает</span></h2>
+        <p class="lead rv" style="max-width:62ch">На сайте только то, что пришло из API колледжа, и простая арифметика по этим данным. Если в расписании есть странность, вы увидите её как есть, а не аккуратную выдумку. Все примеры ниже — из реального расписания конца октября 2026 года.</p>
+        <div class="facts rv">
+          <article class="fact">
+            <div class="fact__api"><b>API</b><code>6 · 16:50–18:10, 7 · 18:00–19:20</code></div>
+            <div class="appview fact__screen">
+              <div class="lesson"><div class="lesson__meta"><span class="lesson__num">6</span><span class="lesson__time">16:50 – 18:10</span></div><h3 class="lesson__title">Основы латинского языка с медицинской терминологией</h3><ul class="parts"><li class="part"><span class="room">204</span><span class="who">ЛД 25/9-1</span></li></ul></div>
+              <div class="shift-divider is-overlap">Пары пересекаются на 10 мин</div>
+              <div class="lesson"><div class="lesson__meta"><span class="lesson__num">7</span><span class="lesson__time">18:00 – 19:20</span></div><h3 class="lesson__title">Основы латинского языка с медицинской терминологией</h3><ul class="parts"><li class="part"><span class="room">204</span><span class="who">СДОЗ 26/11-1</span></li></ul></div>
+            </div>
+            <h3>Пересечение на виду</h3>
+            <p>Время не подгоняется под «сетку звонков». Наложение пар подписано прямо в ленте дня.</p>
+          </article>
+          <article class="fact">
+            <div class="fact__api"><b>API</b><code>4 · 13:40–15:00 и 4 · 13:50–15:10</code></div>
+            <div class="appview fact__screen">
+              <div class="lesson"><div class="lesson__meta"><span class="lesson__num">4</span><span class="lesson__time">13:40 – 15:00 / 13:50 – 15:10</span></div><h3 class="lesson__title">Системное программирование / Введение в специальность</h3></div>
+            </div>
+            <h3>Все варианты времени</h3>
+            <p>У разных групп одного номера пары время может отличаться. Сайт показывает оба варианта, а окна считает по самому позднему концу.</p>
+          </article>
+          <article class="fact">
+            <div class="fact__api"><b>API</b><code>3-й пары нет</code></div>
+            <div class="appview fact__screen">
+              <div class="slot"><b>3</b>нет пары</div>
+              <div class="window">Окно · свободно 11:20 – 13:40, 2 ч 20 мин</div>
+            </div>
+            <h3>Окна без выдуманных звонков</h3>
+            <p>У пустой пары нет своего времени в API, поэтому его нет и на сайте. Свободный промежуток считается между реальными парами.</p>
+          </article>
+          <article class="fact">
+            <div class="fact__api"><b>API</b><code>teacher: «ВАКАНСИЯ»</code></div>
+            <div class="appview fact__screen">
+              <div class="lesson"><h3 class="lesson__title">Проведение медицинского обследования с целью диагностики, назначения и проведения лечения заболеваний хирургического профиля</h3><ul class="parts"><li class="part"><span class="room">201</span><span class="who muted-who">Преподаватель не назначен</span></li></ul></div>
+            </div>
+            <h3>Понятные слова вместо служебных</h3>
+            <p>Служебная запись не выдаётся за человека: в карточке так и написано, что преподаватель не назначен, а в поиске её нет.</p>
+          </article>
+          <article class="fact">
+            <div class="fact__api"><b>API</b><code>подгруппа 1 и 2 — разные предметы</code></div>
+            <div class="appview fact__screen">
+              <div class="lesson"><h3 class="lesson__title">УП.02 Ведение медицинской документации, организация деятельности находящегося в распоряжении медицинского персонал</h3><ul class="parts"><li class="part"><span class="sg">1</span><span class="room">СОКБ</span><span class="who">Сенцов Д.С.</span></li></ul><h3 class="lesson__title" style="margin-top:6px">Сестринский уход за пациентами детского возраста</h3><ul class="parts"><li class="part"><span class="sg">2</span><span class="room">303</span><span class="who">Васильева Н.Р.</span></li></ul></div>
+            </div>
+            <h3>Подгруппы не склеиваются</h3>
+            <p>Если у половин группы разные предметы, у каждой свой блок: название, кабинет и преподаватель.</p>
+          </article>
+          <article class="fact">
+            <div class="fact__api"><b>API</b><code>неделя опубликована для одного корпуса</code></div>
+            <div class="appview fact__screen">
+              <div class="notice"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span><b>Расписание ещё не опубликовано</b><br>На эту неделю данных нет. Загляните позже.</span></div>
+            </div>
+            <h3>«Не опубликовано» ≠ «пар нет»</h3>
+            <p>Пока колледж выложил неделю не для всех корпусов, сайт не скажет, что у вас выходной.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <!-- 7. Мобильная версия -->
     <section class="slide" id="s-mobile" data-title="Мобильная версия">
       <div class="slide__inner split">
         <div>
           <span class="eyebrow rv">Сделано для телефона</span>
           <h2 class="h-lg rv">Расписание — в кармане, а не в зуме</h2>
-          <p class="lead rv">На телефоне открывается режим «День». Всё управление — внизу, под большим пальцем: полоса дней недели и переключатель дня. Свайп листает дни, подробности выезжают нижней шторкой.</p>
+          <p class="lead rv">На телефоне первым открывается профиль, а расписание — в режиме «День». Всё управление внизу, под большим пальцем: полоса дней и переключатель недели. Свайп листает дни, подробности выезжают нижней шторкой.</p>
           <ul class="bullets rv">
             <li><span class="ico">↓</span><span><b>Навигация снизу:</b> стрелки, «День / Неделя» и полоса дней — не нужно тянуться к верху экрана</span></li>
             <li><span class="ico">⋮</span><span><b>Точки под числом</b> — по одной на каждую пару; ряды делятся по длинному перерыву, пустая точка — свободная пара</span></li>
@@ -836,7 +960,7 @@
           </ul>
         </div>
         <div class="phones rv">
-          <div class="phone phone--baked"><div class="phone__screen"><img src="screenshots/mobile-day-light.webp" alt="День на телефоне, светлая тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
+          <div class="phone phone--baked"><div class="phone__screen"><img src="screenshots/mobile-profile-light.webp" alt="Профиль на телефоне, светлая тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
           <div class="phone phone--dark phone--baked"><div class="phone__screen"><img src="screenshots/mobile-modal-dark.webp" alt="Шторка с подробностями пары, тёмная тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
           <div class="phone phone--dark phone--baked"><div class="phone__screen"><img src="screenshots/mobile-building-free-dark.webp" alt="Свободные кабинеты корпуса на телефоне, тёмная тема" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div>
         </div>
@@ -851,17 +975,18 @@
         <div class="vs rv">
           <div class="vs__phone"><p class="vs__label">sielom.ru<span>официальное</span></p><div class="phone phone--baked" style="--pw:210px"><div class="phone__screen"><img src="screenshots/off-mobile.webp" alt="Официальное расписание на телефоне" width="780" height="1688" loading="lazy"><div class="phone__bar"><span>9:41</span></div><i class="phone__island"></i><i class="phone__home"></i></div></div></div>
           <table class="table">
-            <thead><tr><th></th><th>sielom.ru/timetable</th><th>Этот проект</th></tr></thead>
+            <thead><tr><th></th><th>sielom.ru/timetable</th><th>Мой Сиелом</th></tr></thead>
             <tbody>
+              <tr><td>Своё расписание при входе</td><td class="n">Нет</td><td class="y">Профиль без регистрации</td></tr>
+              <tr><td>Сводка недели</td><td class="n">Нет</td><td class="y">Пары, часы, окна, предметы</td></tr>
               <tr><td>Текущая пара</td><td class="n">Нет</td><td class="y">Подсветка, таймер, прогресс</td></tr>
               <tr><td>Свободные кабинеты</td><td class="n">Нет</td><td class="y">Табло и шахматка всего корпуса</td></tr>
               <tr><td>Тёмная тема</td><td class="n">Нет</td><td class="y">Системная / светлая / тёмная</td></tr>
               <tr><td>Подробности пары</td><td class="n">Клик ничего не делает</td><td class="y">Корпус, адрес, ФИО, группы</td></tr>
               <tr><td>Поиск</td><td class="n">Выбор через корпус и курс</td><td class="y">Единый и гибкий: «ис 24 9 2»</td></tr>
-              <tr><td>Горячие клавиши</td><td class="n">Нет</td><td class="y">← → T / D Esc</td></tr>
-              <tr><td>Пустые пары на телефоне</td><td class="n">Карточки на весь экран</td><td class="y">Только реальные пары</td></tr>
+                            <tr><td>Пустые пары на телефоне</td><td class="n">Карточки на весь экран</td><td class="y">Только реальные пары</td></tr>
               <tr><td>День / неделя</td><td class="eq">Есть</td><td class="eq">Есть</td></tr>
-              <tr><td>Избранное</td><td class="eq">Есть</td><td class="eq">Есть, + кабинеты</td></tr>
+              <tr><td>Избранное</td><td class="eq">Есть</td><td class="eq">Есть, + кабинеты, во вкладке «Моё»</td></tr>
               <tr><td>Экспорт в PDF</td><td class="y">Есть</td><td class="n">Пока нет</td></tr>
             </tbody>
           </table>
@@ -886,12 +1011,12 @@
           <p class="keys-note rv">Нажмите любую из клавиш — подсветится. <kbd>D</kbd> работает и в этой презентации.</p>
         </div>
         <div class="grid rv" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0">
-          <div class="tile"><div class="tile__ico">★</div><h3>Избранное</h3><p>Группы, преподаватели и кабинеты — в один клик, фильтр «только избранное».</p></div>
-          <div class="tile"><div class="tile__ico">⌂</div><h3>Запоминает выбор</h3><p>Открываешь сайт — сразу твоя группа и твой режим просмотра.</p></div>
+          <div class="tile"><div class="tile__ico">★</div><h3>Избранное</h3><p>Группы, преподаватели и кабинеты в один клик. Живут во вкладке «Моё», рядом с профилем.</p></div>
+          <div class="tile"><div class="tile__ico">⌂</div><h3>Своя главная</h3><p>Профиль, своё расписание, курируемая группа или последнее открытое — выбираете сами.</p></div>
           <div class="tile"><div class="tile__ico">↻</div><h3>Всегда актуально</h3><p>Данные берутся напрямую из API sielom.ru, без копий и задержек.</p></div>
           <div class="tile"><div class="tile__ico">⚡</div><h3>Быстро</h3><p>Список сотрудников хранится локально сутки, шрифты и иконки — свои, ничего лишнего не грузится.</p></div>
           <div class="tile"><div class="tile__ico">▢</div><h3>Как приложение</h3><p>Иконка, ярлык на рабочем столе или главном экране, запуск в отдельном окне.</p></div>
-          <div class="tile"><div class="tile__ico">✓</div><h3>Работает из России</h3><p>Без Google Fonts и чужих прокси: статика на GitHub Pages и прямые запросы к API.</p></div>
+          <div class="tile"><div class="tile__ico">✓</div><h3>Работает из России</h3><p>Без Google Fonts и чужих прокси: статика на GitHub Pages и прямые запросы к API. Даже эта презентация.</p></div>
         </div>
       </div>
     </section>
@@ -922,7 +1047,7 @@
       <div class="slide__inner">
         <span class="eyebrow rv">Под капотом</span>
         <h2 class="h-lg rv">Без фреймворков. Без сборки.</h2>
-        <p class="lead rv" style="max-width:60ch">Чистые HTML, CSS и JavaScript. Своего сервера нет вообще: сайт — статика на GitHub Pages, а браузер ходит в официальный API напрямую (он отдаёт CORS-заголовки).</p>
+        <p class="lead rv" style="max-width:60ch">Чистые HTML, CSS и JavaScript. Своего сервера нет вообще: сайт — статика на GitHub Pages, а браузер ходит в официальный API напрямую. Профиль и избранное лежат в вашем браузере, сайт ничего о вас не хранит.</p>
         <div class="arch rv">
           <div class="node"><h3>GitHub Pages</h3><code>index.html · app.js</code><code>styles.css · fonts.css</code><code>demo.html · шрифты, иконки</code></div>
           <div class="arrow">→</div>
@@ -933,8 +1058,8 @@
         <div class="stats rv">
           <div class="stat"><b>0</b><span>npm-зависимостей</span></div>
           <div class="stat"><b>4</b><span>файла фронтенда</span></div>
-          <div class="stat"><b>~190 КБ</b><span>исходников целиком</span></div>
-          <div class="stat"><b>0</b><span>серверного кода</span></div>
+          <div class="stat"><b>~270 КБ</b><span>исходников целиком</span></div>
+          <div class="stat"><b>0</b><span>аккаунтов и cookies</span></div>
         </div>
       </div>
     </section>
@@ -965,7 +1090,7 @@
         </ul>
         <div class="colophon rv">
           <div><h4>Данные</h4><p>Расписание и фото сотрудников — с официальных сайтов колледжа, <a href="https://sielom.ru/timetable/" target="_blank" rel="noopener">sielom.ru</a>.</p></div>
-          <div><h4>Исходники</h4><p>Открыты на <a href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">GitHub</a>: история изменений и описание.</p></div>
+          <div><h4>Исходники</h4><p>Открыты на <a href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener">GitHub</a> под лицензией <a href="https://github.com/NikkiShuRA/my-sielom-web/blob/master/LICENSE" target="_blank" rel="noopener">GNU AGPL v3</a>.</p></div>
           <div><h4>Статус</h4><p>Неофициальный проект: сделан для <a class="edu" href="https://sielom.ru/" target="_blank" rel="noopener"><img src="edu-logo.webp" alt="" width="20" height="20">СИЭУиП</a>, но не от имени института.</p></div>
         </div>
       </div>
@@ -1146,6 +1271,21 @@
     $$("#bldTabs .tab").forEach((t) => t.addEventListener("click", () => showBld(+t.dataset.i)));
     showBld(0);
 
+    // ---------- Табы профиля ----------
+    const ME_COPY = [
+      ["Студент", "Выберите группу один раз — и сайт открывается с неё. Что идёт сейчас, в каком кабинете, сколько осталось и что дальше сегодня. Преподаватели с фото, подгруппы значками."],
+      ["Преподаватель", "Свои пары и группы на сегодня. Если вы куратор — карточка курируемой группы: где она сейчас и есть ли примечания о переносах на неделе."],
+      ["Неделя", "Сводка: сколько пар, часов в аудитории, дней с парами и окон. Столбики по дням открывают нужный день, а в списке предметов видно, с кем и сколько пар на этой неделе."],
+    ];
+    const showMe = (i) => {
+      $$("#meTabs .tab").forEach((t, j) => t.setAttribute("aria-selected", j === i));
+      $$("#meStage .shot").forEach((s, j) => (s.hidden = j !== i));
+      $$("#mePhones .phone").forEach((p) => p.classList.toggle("is-off", +p.dataset.v !== (i === 1 ? 1 : 0)));
+      swapHTML($("#meCopy"), `<b>${ME_COPY[i][0]}</b>${ME_COPY[i][1]}`);
+    };
+    $$("#meTabs .tab").forEach((t) => t.addEventListener("click", () => showMe(+t.dataset.i)));
+    showMe(0);
+
     // ---------- Подробности: обычная пара / замена ----------
     const DETAIL_CAPTION = ["Так выглядят подробности обычной пары.", "Если колледж указал замену, над данными появляется плашка с текстом, а кабинет подсвечивается. Примечание видно и на карточке — значком."];
     const showDetail = (v) => {
@@ -1226,7 +1366,7 @@
         });
         hero.addEventListener("pointerleave", () => { stage.style.setProperty("--mx", 0); stage.style.setProperty("--my", 0); });
         // лёгкий наклон скриншотов в духе «карточки в руке»
-        $$("#bldStage, .lab__shot").forEach((el) => {
+        $$("#bldStage, #meStage, .lab__shot").forEach((el) => {
           el.dataset.tilt = "";
           el.addEventListener("pointermove", (e) => {
             const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
@@ -1284,6 +1424,7 @@
           bar.firstChild.style.setProperty("--p", `${(t / ms) * 100}%`);
         }, 100);
       };
+      autoTabs("s-me", "#meTabs", 3, showMe, 6000);
       autoTabs("s-kinds", "#kindTabs", 3, showKind, 5200);
       autoTabs("s-building", "#bldTabs", 3, showBld, 6500);
 
