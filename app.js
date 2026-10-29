@@ -1120,7 +1120,7 @@
     const narrow = narrowMQ.matches;
     const view = state.building.view;
     const tools = view === "all" && !narrow ? `
-      <label class="bfind">${ICON.search}<input id="bfind" type="search" placeholder="Найти группу или преподавателя" value="${esc(state.building.find)}" autocomplete="off" aria-label="Подсветить группу или преподавателя"><button type="button" class="bfind__clear" id="bfindClear" aria-label="Очистить поиск"${state.building.find ? "" : " hidden"}><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></label>
+      <label class="bfind">${ICON.search}<input id="bfind" type="search" placeholder="Найти группу или преподавателя" value="${esc(state.building.find)}" autocomplete="off" spellcheck="false" aria-label="Подсветить группу или преподавателя"><button type="button" class="bfind__clear" id="bfindClear" aria-label="Очистить поиск"${state.building.find ? "" : " hidden"}><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></label>
       <div class="bchips" role="group" aria-label="Этаж">${[["all", "Все"], ...B.floors.map(([f]) => [f, FLOOR_SHORT(f)])].map(([v, t]) =>
         `<button class="bchip${state.building.floor === v ? " is-active" : ""}" data-bfloor="${v}" aria-pressed="${state.building.floor === v}">${esc(t)}</button>`).join("")}</div>
       <button class="bchip bchip--free" data-bonly-free aria-pressed="${state.building.onlyFree}">${ICON.door}Только свободные</button>` : "";
@@ -2499,7 +2499,7 @@
     return `<div class="picker" data-picker="${kind}">
       <label class="search">
         <svg class="search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.75" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <input type="search" placeholder="${esc(placeholder)}" autocomplete="off" aria-label="${esc(placeholder)}">
+        <input type="search" placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false" aria-label="${esc(placeholder)}">
       </label>
       <ul class="picker__list"></ul>
     </div>`;
