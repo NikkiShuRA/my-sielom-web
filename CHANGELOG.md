@@ -4,6 +4,8 @@
 
 ## [Не выпущено]
 
+## [0.2.0] — 2026-11-01
+
 ### Добавлено
 
 - Выбор версии сайта в настройках: предпросмотр с текущим `master`, актуальный релиз и прошлые релизы
@@ -35,5 +37,6 @@
 
 - Лицензия: `AGPL-3.0-or-later` вместо MIT
 
-[Не выпущено]: https://github.com/NikkiShuRA/my-sielom-web/compare/v0.1.0...HEAD
+[Не выпущено]: https://github.com/NikkiShuRA/my-sielom-web/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/NikkiShuRA/my-sielom-web/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/NikkiShuRA/my-sielom-web/releases/tag/v0.1.0
