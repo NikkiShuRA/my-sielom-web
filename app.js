@@ -23,6 +23,11 @@
   const SHOW_BREAK = 5;
   const EMPLOYEE_CACHE_KEY = "sielom.employees.v1";
   const EMPLOYEE_CACHE_TTL = 24 * 60 * 60 * 1000;
+  // В API нет учебного плана и академических часов: одна пара считается за два часа, в какой бы день и сколько бы минут она ни шла
+  const PAIR_HOURS = 2;
+  const TALLY_CACHE_KEY = "sielom.tally.v1";
+  const TALLY_CACHE_TTL = 24 * 60 * 60 * 1000;
+  const TALLY_CONCURRENCY = 4;
 
   // «Кабинеты» вне корпусов колледжа: в расписании они числятся за корпусом, но находятся по своему адресу
   const EXTERNAL_PLACES = {
@@ -103,6 +108,8 @@
     week: null,
     lessons: [],
     curatedLessons: new Map(), // страница профиля: id курируемой группы → её пары за неделю
+    subjPeriod: store.get("sielom.subjPeriod", "week") === "week" ? "week" : "past", // карточка предметов: "week" — расписание недели, "past" — прошедшие с начала учебного года
+    tally: { owner: null, status: null }, // пары с начала учебного года: { owner, lastId, status, lessons, range }
     divisionLessons: [],
     cabinets: new Map(),
     bells: new Map(),
@@ -1526,6 +1533,7 @@
     state.loadingWeek = false;
     renderChrome();
     renderWeek();
+    ensureTally();
   }
 
   async function refreshDivisionLessons(token) {
@@ -2311,14 +2319,100 @@
     </section>`;
   }
 
-  // Предметы недели и кто с тобой на них: студенту — преподаватели с фото, преподавателю — группы.
+  // ---------- Пары с начала учебного года ----------
+  // Семестр — непрерывная серия недель с одним номером: так границы берутся из API, а каникулы не мешают
+  const weekStart = (w) => w.dateStart.slice(0, 10);
+  const weekEnd = (w) => w.dateEnd.slice(0, 10);
+  function semesterRuns(weeks) {
+    const runs = [];
+    for (const w of [...weeks].sort((a, b) => a.dateStart.localeCompare(b.dateStart))) {
+      const last = runs.at(-1);
+      if (last?.[0].semester === w.semester) last.push(w); else runs.push([w]);
+    }
+    return runs;
+  }
+  // Недели учебного года, уже начавшиеся к сегодняшнему дню: первый семестр и следующий за ним второй. На каникулах — только что закончившийся год
+  function academicYearWeeks(weeks, today) {
+    const runs = semesterRuns(weeks);
+    const i = runs.findLastIndex((r) => weekStart(r[0]) <= today);
+    if (i < 0) return [];
+    const withFirst = runs[i][0].semester === 2 && runs[i - 1]?.[0].semester === 1;
+    return [...(withFirst ? runs[i - 1] : []), ...runs[i]].filter((w) => weekStart(w) <= today);
+  }
+
+  const packLesson = (l) => [l.date, l.lessonNumber, l.timeStart, l.timeEnd, l.subgroup, l.subject?.name || null, l.teacher?.name || null, l.group?.id_1c || null, l.group?.name || null];
+  const unpackLesson = ([date, lessonNumber, timeStart, timeEnd, subgroup, subject, teacher, groupId, groupName]) => ({
+    date, lessonNumber, timeStart, timeEnd, subgroup,
+    subject: subject ? { name: subject } : null, teacher: teacher ? { name: teacher } : null, group: groupId ? { id_1c: groupId, name: groupName } : null,
+  });
+
+  // Расписание правят и задним числом, а `version` недели этого не отражает: текущую и прошлую неделю берём заново, старые — раз в сутки.
+  // Если неделю обновить не вышло, остаётся её прошлая копия; недели без копии — ошибка, а не заниженное число
+  const tallyOwner = (home) => `${home.kind}|${home.id}`;
+  async function loadYearLessons(home, weeks) {
+    const owner = tallyOwner(home);
+    const cached = store.get(TALLY_CACHE_KEY, null);
+    const stored = cached?.owner === owner ? cached.weeks : {};
+    const recent = new Date(); recent.setDate(recent.getDate() - 7);
+    const isFresh = (w, entry) => entry && weekEnd(w) < isoDate(recent) && Date.now() - entry.at < TALLY_CACHE_TTL;
+    const queue = weeks.filter((w) => !isFresh(w, stored[w.id]));
+    await Promise.all(Array.from({ length: TALLY_CONCURRENCY }, async () => {
+      for (let w; (w = queue.shift());) {
+        try {
+          const lessons = await loadLessonsFor(home, w, "");
+          stored[w.id] = { at: Date.now(), rows: lessons.map(packLesson) };
+        } catch (e) {
+          if (!stored[w.id]) throw e;
+        }
+      }
+    }));
+    store.set(TALLY_CACHE_KEY, { owner, weeks: Object.fromEntries(weeks.map((w) => [w.id, stored[w.id]])) });
+    return weeks.flatMap((w) => stored[w.id].rows.map(unpackLesson));
+  }
+
+  const rerenderTally = () => {
+    if (!isProfile() || state.loadingWeek) return;
+    const focused = document.activeElement?.dataset?.pfPeriod;
+    renderWeek({ keepScroll: true });
+    if (focused) $(`[data-pf-period="${focused}"]`)?.focus();
+  };
+
+  let tallyToken = 0;
+  async function ensureTally() {
+    const home = profileHome();
+    if (!isProfile() || !home || state.subjPeriod === "week") return;
+    const owner = tallyOwner(home);
+    const today = isoDate(new Date());
+    let weeks;
+    try { weeks = await apiFetch(`${API}/weeks`); }
+    catch { state.tally = { owner, status: "error" }; rerenderTally(); return; }
+    const range = academicYearWeeks(weeks, today);
+    const lastId = range.at(-1)?.id;
+    if (state.tally.owner === owner && state.tally.lastId === lastId && state.tally.status !== "error") return;
+    const token = ++tallyToken;
+    state.tally = { owner, lastId, status: "loading" };
+    rerenderTally();
+    try {
+      const lessons = await loadYearLessons(home, range);
+      if (token !== tallyToken) return;
+      state.tally = { owner, lastId, status: "ready", lessons, range };
+    } catch {
+      if (token !== tallyToken) return;
+      state.tally = { owner, lastId, status: "error" };
+    }
+    rerenderTally();
+  }
+
+  // Предметы и кто с тобой на них: студенту — преподаватели с фото, преподавателю — группы.
   // Одна карточка вместо двух: «что» и «с кем» читаются вместе, а не сопоставляются глазами
-  function pfSubjectsHTML(slots, kind) {
+  function subjectTally(slots, kind, isDone) {
     const by = new Map();
     // у подгрупп в одной паре бывают разные предметы — пара засчитывается каждому из них
     for (const s of slots) for (const [name, ls] of subjectGroups(s)) {
-      const e = by.get(name) || { n: 0, who: new Map() };
+      const e = by.get(name) || { n: 0, done: 0, who: new Map(), common: 0, sub: new Map() };
+      const done = isDone(s) ? 1 : 0;
       e.n++;
+      e.done += done;
       // сколько пар этого предмета с каждой группой (преподавателем): в потоке пара засчитывается каждой группе один раз
       const seen = new Set();
       for (const l of ls) {
@@ -2327,32 +2421,76 @@
           : l.teacher?.name && !isVacancy(l.teacher) && { type: "teacher", id: l.teacher.name, name: l.teacher.name };
         if (!w || seen.has(w.id)) continue;
         seen.add(w.id);
-        const cur = e.who.get(w.id) || { ...w, n: 0 };
+        const cur = e.who.get(w.id) || { ...w, n: 0, done: 0 };
         cur.n++;
+        cur.done += done;
         e.who.set(w.id, cur);
       }
+      // пара всей группы (подгруппа 0) идёт всем; остальные — только своей подгруппе
+      const sgs = new Set(ls.map((l) => l.subgroup));
+      if (sgs.has(0) || !sgs.size) e.common++;
+      else for (const sg of sgs) e.sub.set(sg, (e.sub.get(sg) || 0) + 1);
       by.set(name, e);
     }
-    if (!by.size) return "";
+    return by;
+  }
+
+  // Подгруппы показываем, только если у них разное число пар: иначе хватает общего счётчика
+  function subgroupNote(e) {
+    const counts = [...e.sub.entries()].sort((a, b) => a[0] - b[0]).map(([sg, n]) => [sg, e.common + n]);
+    if (!counts.length || (counts.length > 1 && new Set(counts.map((c) => c[1])).size === 1)) return "";
+    const parts = counts.map(([sg, n]) => `подгр. ${sg}: ${n}`);
+    if (counts.length === 1) parts.push(`остальные: ${e.common}`);
+    return `<p class="pf-subj__sg">${esc(parts.join(" · "))}</p>`;
+  }
+
+  function pfSubjectsHTML(slots, kind, now) {
+    const period = state.subjPeriod;
+    // неделя — что есть в расписании, «Прошедшие» — что уже прошло с начала учебного года
+    const periods = [["week", state.weekOffset === 0 ? "На этой неделе" : "На открытой неделе"], ["past", "Прошедшие"]];
+    const switcher = `<div class="pf-period" role="group" aria-label="Какие пары показать">${periods.map(([k, label]) =>
+      `<button type="button" class="pf-period__btn${k === period ? " is-active" : ""}" data-pf-period="${k}" aria-pressed="${k === period}">${label}</button>`).join("")}</div>`;
+    const shell = (body) => `<section class="pf-card pf-subjects">
+      <header class="pf-card__head"><h3 class="pf-card__title">${kind === "teacher" ? "Предметы и группы" : "Предметы и преподаватели"}</h3></header>
+      ${switcher}${body}
+    </section>`;
+
+    const tally = period === "week" ? null : state.tally.owner === tallyOwner(profileHome()) ? state.tally : { status: "loading" };
+    if (tally?.status === "loading") return shell(`<div class="pf-subj-msg"><span class="spin spin--sm"></span>Считаем пары…</div>`);
+    if (tally?.status === "error") return shell(`<div class="pf-empty"><b>Не удалось посчитать пары</b><span>Часть недель не загрузилась, а неполное число было бы неверным</span><button type="button" class="btn btn--soft btn--sm" data-pf-tally-retry>Повторить</button></div>`);
+
+    // за учебный год считаем только закончившиеся пары; идущая войдёт в счёт, когда закончится
+    const isDone = (s) => timing(spanOf(s), parseISO(s[0].date), now)?.kind === "past";
+    const shown = tally ? slotsOf(tally.lessons).filter(isDone) : slots;
+    const by = subjectTally(shown, kind, isDone);
+    const range = tally?.range;
+    const lastDay = range?.length ? [isoDate(now), weekEnd(range.at(-1))].sort()[0] : null;
+    const dateShort = (iso) => { const d = parseISO(iso); return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`; };
+    const countWord = !tally ? (state.weekOffset === 0 ? "на этой неделе" : `за неделю ${weekRangeLabel(weekDates())}`) : "с начала учебного года";
+    // неделя — всё её расписание, в том числе ещё не прошедшие пары; учебный год — только прошедшие
+    const periodText = !tally ? `В расписании ${countWord} ${shown.length} ${pairsWord(shown.length)}, из них прошло ${shown.filter(isDone).length}`
+      : lastDay ? `Прошло по расписанию ${countWord} · ${dateShort(weekStart(range[0]))} – ${dateShort(lastDay)}` : "";
+    const periodLine = periodText && by.size ? `<p class="pf-subj__period">${esc(periodText)}</p>` : "";
+    if (!by.size) return shell(`<div class="pf-subj-msg">${tally ? "Прошедших пар пока нет" : `${countWord[0].toUpperCase()}${countWord.slice(1)} пар нет`}</div>`);
+
     const rows = [...by.entries()].sort((a, b) => b[1].n - a[1].n || naturalSort(a[0], b[0]));
     const max = rows[0][1].n;
-    // все числа в карточке — за открытую неделю, а не за семестр
-    const weekWord = state.weekOffset === 0 ? "на этой неделе" : `за неделю ${weekRangeLabel(weekDates())}`;
-    const count = (w) => `<span class="pf-who__n" aria-label="${w.n} ${pairsWord(w.n)} ${weekWord}">${w.n}</span>`;
+    const pairsOf = (n) => n % 10 === 1 && n % 100 !== 11 ? "пары" : "пар"; // «из 1 пары», «из 3 пар»
+    const countText = (w) => tally ? `${w.n} ${pairsWord(w.n)} ${countWord}` : `прошло ${w.done} из ${w.n} ${pairsOf(w.n)} ${countWord}`;
+    const count = (w) => `<span class="pf-who__n" aria-label="${countText(w)}">${tally ? w.n : `${w.done}/${w.n}`}</span>`;
     const whoHTML = (w) => {
-      const tip = `${w.name}: ${w.n} ${pairsWord(w.n)} ${weekWord}`;
+      const tip = `${w.name}: ${countText(w)}`;
       if (w.type === "teacher") return `<button type="button" class="pf-who" data-pf-teacher="${esc(w.id)}" title="${esc(tip)}">${avatarHTML(w.name, "avatar avatar--xs")}<span class="pf-who__name">${esc(abbName(w.name))}</span>${count(w)}</button>`;
       const p = groupParts(w.name), cur = profile.curated.some((g) => g.id === w.id);
       return `<button type="button" class="pf-who${cur ? " is-cur" : ""}" data-pf-group="${esc(w.id)}" title="${esc(tip)}${cur ? " · курирую" : ""}"><span class="sg sg--tag">${esc(p.mark)}</span><span class="pf-who__name">${esc(p.rest)}</span>${count(w)}</button>`;
     };
-    return `<section class="pf-card pf-subjects">
-      <header class="pf-card__head"><h3 class="pf-card__title">${kind === "teacher" ? "Предметы и группы" : "Предметы и преподаватели"}</h3><span class="pf-card__aside">пар ${esc(weekWord)}</span></header>
-      <ul class="pf-subj-list">${rows.map(([name, e]) => `<li class="pf-subj" style="--v:${e.n / max}">
-        <div class="pf-subj__top"><span class="pf-subj__name" title="${esc(name)}">${esc(name)}</span><span class="pf-subj__n">${e.n}<small>${pairsWord(e.n)}</small></span></div>
-        <span class="pf-meter__bar"></span>
+    const unit = (e) => tally ? `${pairsWord(e.n)} · ${e.n * PAIR_HOURS} ак. ч.` : `из ${e.n} прошло`;
+    return shell(`${periodLine}<ul class="pf-subj-list">${rows.map(([name, e]) => `<li class="pf-subj">
+        <div class="pf-subj__top"><span class="pf-subj__name" title="${esc(name)}">${esc(name)}</span><span class="pf-subj__n">${tally ? e.n : e.done}<small>${unit(e)}</small></span></div>
+        <span class="pf-meter__bar" style="width:${e.n / max * 100}%;--v:${tally ? 1 : e.done / e.n}"></span>
+        ${tally && kind === "group" ? subgroupNote(e) : ""}
         ${e.who.size ? `<div class="pf-subj__who">${[...e.who.values()].sort((a, b) => b.n - a.n || naturalSort(a.name, b.name)).map(whoHTML).join("")}</div>` : ""}
-      </li>`).join("")}</ul>
-    </section>`;
+      </li>`).join("")}</ul>${tally ? `<p class="pf-subj__foot">Считаем по расписанию: сорванную пару, которую из него не убрали, мы не отличим от проведённой. 1 пара = ${PAIR_HOURS} ак. ч.</p>` : ""}`);
   }
 
   // Карточка курируемой группы: где группа сейчас и что у неё сегодня
@@ -2431,7 +2569,7 @@
       current && pfTodayHTML(st, kind, now),
       pfLoadHTML(stats, days, kind, now),
       ...curated.map((g) => pfCuratedHTML(g, now, current)),
-      pfSubjectsHTML(slots, kind),
+      pfSubjectsHTML(slots, kind, now),
     ].filter(Boolean);
     week.innerHTML = `<div class="pf">${head}<div class="pf-cols"><div class="pf-col"></div><div class="pf-col"></div></div></div>`;
     layoutProfileCards(cards);
@@ -2469,6 +2607,15 @@
 
   $("#week").addEventListener("click", (e) => {
     if (!isProfile()) return;
+    const periodBtn = e.target.closest("[data-pf-period]");
+    if (periodBtn) {
+      state.subjPeriod = periodBtn.dataset.pfPeriod;
+      store.set("sielom.subjPeriod", state.subjPeriod);
+      rerenderTally();
+      ensureTally();
+      return;
+    }
+    if (e.target.closest("[data-pf-tally-retry]")) { ensureTally(); return; }
     const act = e.target.closest("[data-pf]");
     if (act) { act.dataset.pf === "edit" ? openProfile() : goTo(profileHome()); return; }
     const day = e.target.closest("[data-pf-day]");

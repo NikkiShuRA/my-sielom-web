@@ -276,7 +276,7 @@
           if (/\\/(lessons|weeks)\\b/.test(url)) {
             if (m === "error") throw new TypeError("Failed to fetch");
             if (m === "loading") await new Promise(() => {});
-            if (m === "unpublished" && /\\/weeks\\//.test(url)) return json([]);
+            if (m === "unpublished" && /\\/weeks(\\/|$)/.test(url)) return json([]);
           }
           const r = await _f(u, ...a);
           if (/\\/lessons\\//.test(url)) {
