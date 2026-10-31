@@ -8,6 +8,7 @@
 const http = require("node:http");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { execFile } = require("node:child_process");
 
 const PORT = Number(process.env.PORT) || 5500;
 const CACHE_TTL = 5 * 60 * 1000;
@@ -69,8 +70,23 @@ function redirect(res, location) {
   res.end();
 }
 
+// На сайте versions.json создаёт сборка, локально берём последнюю версию из тегов git
+function sendVersions(res) {
+  execFile("git", ["tag", "--list", "v*", "--sort=-v:refname"], { cwd: ROOT }, (err, out) => {
+    const latest = err ? "" : out.split("\n")[0].trim().slice(1);
+    if (!latest) return send(res, 404, "text/plain; charset=utf-8", "Not found");
+    send(res, 200, MIME[".json"], JSON.stringify([
+      { label: "Предпросмотр", note: `новее ${latest}`, path: "next/" },
+      { label: latest, note: "актуальная", path: "" },
+    ]));
+  });
+}
+
 async function serveStatic(res, pathname) {
   let rel = decodeURIComponent(pathname);
+  // как на GitHub Pages: предпросмотр доступен по /next/; локально это те же файлы
+  if (rel === "/next") return redirect(res, "/next/");
+  if (rel.startsWith("/next/")) rel = rel.slice("/next".length);
   // как на GitHub Pages: презентация из docs/ доступна по /about/
   if (rel === "/about") return redirect(res, "/about/");
   if (rel.startsWith("/about/")) rel = "/docs" + rel.slice("/about".length);
@@ -97,5 +113,6 @@ http.createServer((req, res) => {
       return proxy(req, res, upstream, key);
     }
   }
+  if (url.pathname === "/versions.json") return sendVersions(res);
   serveStatic(res, url.pathname);
 }).listen(PORT, "127.0.0.1", () => console.log(`http://localhost:${PORT}`));

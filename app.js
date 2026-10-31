@@ -40,6 +40,8 @@
     clock: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.4"/><path d="M8 4.75V8l2.25 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
     grid: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg>',
     door: '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 14V3.5c0-.55.45-1 1-1h5.5c.55 0 1 .45 1 1V14M1.5 14h13M10.5 5.5H12c.55 0 1 .45 1 1V14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8.5" r=".9" fill="currentColor"/></svg>',
+    tag: '<svg class="set-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 3.5a1 1 0 0 1 1-1h4.1a1 1 0 0 1 .7.3l5 5a1 1 0 0 1 0 1.4l-4.1 4.1a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1-.3-.7V3.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="5.5" cy="5.5" r="1" fill="currentColor"/></svg>',
+    eye: '<svg class="set-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.75 8S4 3.75 8 3.75 14.25 8 14.25 8 12 12.25 8 12.25 1.75 8 1.75 8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="1.9" stroke="currentColor" stroke-width="1.4"/></svg>',
     search: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.75" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
     calClock: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="16" cy="16" r="3.6" fill="var(--c-bg)" stroke="currentColor" stroke-width="1.5"/><path d="M16 14.5V16l1 .8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
     wifiOff: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 9.5a13 13 0 0 1 18 0M6 13a8.5 8.5 0 0 1 12 0M9.2 16.4a4 4 0 0 1 5.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
@@ -256,6 +258,23 @@
       ? `<span class="${cls}"><img src="${esc(url)}" alt="" loading="lazy"></span>`
       : `<span class="${cls}" style="--h:${hue(name)}" aria-hidden="true">${esc(initials(name.split(/\s+/)))}</span>`;
   }
+
+  // ---------- Версия сайта: в корне — последний релиз, в next/ — текущий master, в v/<версия>/ — прошлые релизы ----------
+  const sitePath = location.pathname.match(/\/(next|v\/[^/]+)\//)?.[1] || "";
+  const siteRoot = sitePath ? "../".repeat(sitePath.split("/").length) : "./";
+  if (sitePath) $$(".brand__sub").forEach((el) => { el.textContent = sitePath === "next" ? "Предпросмотр" : `Версия ${sitePath.slice(2)}`; });
+
+  // versions.json создаёт сборка сайта; локально его нет, и список сводится к двум адресам
+  const FALLBACK_VERSIONS = [{ label: "Предпросмотр", note: "следующая", path: "next/" }, { label: "Актуальная", note: "", path: "" }];
+  async function renderVersions() {
+    const versions = await fetch(`${siteRoot}versions.json`).then((r) => r.ok ? r.json() : FALLBACK_VERSIONS).catch(() => FALLBACK_VERSIONS);
+    const current = sitePath ? `${sitePath}/` : "";
+    $("#versionValue").textContent = versions.find((v) => v.path === current)?.label || "";
+    $("#versionList").innerHTML = versions.map((v) => `<li><a class="set-row${v.path === current ? " is-current" : ""}" href="${esc(siteRoot + v.path)}"${v.path === current ? ' aria-current="page"' : ""}>
+      ${v.path === "next/" ? ICON.eye : ICON.tag}<span class="set-row__label">${esc(v.label)}</span>${v.note ? `<span class="set-row__note">${esc(v.note)}</span>` : ""}${v.path === current ? ICON.check : ""}
+    </a></li>`).join("");
+  }
+  renderVersions();
 
   // ---------- Сегмент-контрол: бегунок под активной кнопкой ----------
   function syncThumb(seg) {
@@ -1647,20 +1666,31 @@
 
   // ---------- Тема: системная → светлая → тёмная ----------
   const THEMES = ["system", "light", "dark"];
-  const THEME_LABEL = { system: "Системная", light: "Светлая", dark: "Тёмная" };
   let theme = THEMES.includes(store.get("sielom.theme", "system")) ? store.get("sielom.theme", "system") : "system";
 
   function applyTheme() {
     if (theme === "system") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = theme;
-    $("#themeValue").textContent = THEME_LABEL[theme];
+    $$("[data-theme-pick]").forEach((b) => {
+      const on = b.dataset.themePick === theme;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-pressed", on);
+    });
   }
   function cycleTheme() {
     theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
     store.set("sielom.theme", theme);
     applyTheme();
   }
-  $("#themeBtn").addEventListener("click", cycleTheme);
+  $("#settingsBtn").addEventListener("click", () => { setDrawer(false); $("#settingsModal").showModal(); });
+  $("#settingsModal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) { e.currentTarget.close(); return; }
+    const pick = e.target.closest("[data-theme-pick]");
+    if (!pick) return;
+    theme = pick.dataset.themePick;
+    store.set("sielom.theme", theme);
+    applyTheme();
+  });
   applyTheme();
 
   const mobileMQ = matchMedia("(max-width: 900px)");

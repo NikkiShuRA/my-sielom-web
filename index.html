@@ -149,20 +149,15 @@
       </div>
 
       <div class="settings">
-        <button class="settings__row" disabled>
-          <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2a4 4 0 0 0-4 4v2.5L2.75 11h10.5L12 8.5V6a4 4 0 0 0-4-4zM6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-          <span class="settings__label">Уведомления</span>
-          <span class="settings__soon">Скоро</span>
-        </button>
-        <button class="settings__row" id="themeBtn" title="Сменить тему (D)">
-          <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
-          <span class="settings__label">Тема оформления</span>
-          <span class="settings__value" id="themeValue">Системная</span>
-        </button>
-        <a class="settings__row" href="about/">
-          <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.25V11M8 5h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          <span class="settings__label">О приложении</span>
+        <a class="settings__row" href="https://sielom.ru/timetable/" target="_blank" rel="noopener" title="Расписание на сайте института, sielom.ru">
+          <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M7 3H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9M9.5 2.5h4v4M13 3 7.5 8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="settings__label">Официальное расписание</span>
         </a>
+        <button type="button" class="settings__row" id="settingsBtn">
+          <svg class="settings__icon" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M8.4 2.75h3.2l.45 2.1c.5.2.97.47 1.4.8l2.05-.66 1.6 2.77-1.6 1.44a5.6 5.6 0 0 1 0 1.6l1.6 1.44-1.6 2.77-2.05-.66c-.43.33-.9.6-1.4.8l-.45 2.1H8.4l-.45-2.1a5.6 5.6 0 0 1-1.4-.8l-2.05.66-1.6-2.77 1.6-1.44a5.6 5.6 0 0 1 0-1.6L2.9 7.76l1.6-2.77 2.05.66c.43-.33.9-.6 1.4-.8l.45-2.1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg>
+          <span class="settings__label">Настройки</span>
+          <span class="settings__value" id="versionValue"></span>
+        </button>
         <a class="settings__row" href="https://github.com/NikkiShuRA/my-sielom-web" target="_blank" rel="noopener" title="Исходный код на GitHub, лицензия GNU AGPL v3 или новее">
           <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="settings__label">Исходный код</span>
@@ -206,6 +201,43 @@
         </button>
       </div>
       <div class="modal__body" id="pBody"></div>
+    </form>
+  </dialog>
+
+  <!-- Настройки -->
+  <dialog class="modal" id="settingsModal" aria-labelledby="sTitle">
+    <form method="dialog" class="modal__inner">
+      <span class="modal__grip" aria-hidden="true"></span>
+      <div class="modal__top">
+        <div class="modal__head" tabindex="-1" autofocus>
+          <div class="modal__subject" id="sTitle">Настройки</div>
+          <div class="modal__sub">Хранятся только в этом браузере</div>
+        </div>
+        <button class="modal__x" aria-label="Закрыть">
+          <svg width="12" height="12" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <section class="set-sec">
+          <h3 class="set-sec__title">Тема оформления</h3>
+          <div class="set-choice" role="group" aria-label="Тема оформления">
+            <button type="button" class="set-choice__btn" data-theme-pick="system"><svg class="set-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>Системная</button>
+            <button type="button" class="set-choice__btn" data-theme-pick="light"><svg class="set-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="2.75" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Светлая</button>
+            <button type="button" class="set-choice__btn" data-theme-pick="dark"><svg class="set-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.25 9.6A5.75 5.75 0 0 1 6.4 2.75a5.75 5.75 0 1 0 6.85 6.85z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Тёмная</button>
+          </div>
+        </section>
+        <section class="set-sec">
+          <h3 class="set-sec__title">Версия сайта</h3>
+          <ul class="set-list" id="versionList"></ul>
+        </section>
+        <section class="set-sec">
+          <h3 class="set-sec__title">Ещё</h3>
+          <ul class="set-list">
+            <li><div class="set-row is-off"><svg class="set-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2a4 4 0 0 0-4 4v2.5L2.75 11h10.5L12 8.5V6a4 4 0 0 0-4-4zM6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="set-row__label">Уведомления</span><span class="settings__soon">Скоро</span></div></li>
+            <li><a class="set-row" href="about/"><svg class="set-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.25V11M8 5h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="set-row__label">О приложении</span></a></li>
+          </ul>
+        </section>
+      </div>
     </form>
   </dialog>
 
