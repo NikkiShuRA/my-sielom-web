@@ -1660,6 +1660,15 @@ svg { flex-shrink: 0; }
 .pf-foot { margin: 0; font-size: 12px; color: var(--c-muted); }
 
 /* Предметы и преподаватели (у преподавателя — группы): строка предмета, полоса доли и «кто» чипами */
+.pf-period { display: flex; gap: 2px; align-self: flex-start; padding: 3px; border-radius: var(--r-full); background: var(--c-bg); }
+.pf-period__btn { min-height: 34px; padding: 0 14px; border-radius: var(--r-full); font: 600 13px var(--font-ui); color: var(--c-text-2); transition: color var(--dur), background var(--dur); }
+.pf-period__btn:hover { color: var(--c-text); }
+.pf-period__btn.is-active { background: var(--c-accent); color: var(--c-on-accent); }
+@media (pointer: coarse), (max-width: 700px) { .pf-period { align-self: stretch; } .pf-period__btn { flex: 1; min-height: 44px; } }
+.pf-subj__period { margin: 0; font-size: 12.5px; color: var(--c-muted); }
+.pf-subj__sg { margin: 0; font-size: 12.5px; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
+.pf-subj__foot { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--c-line); font-size: 12px; line-height: 1.4; color: var(--c-muted); }
+.pf-subj-msg { display: flex; align-items: center; gap: 8px; padding: 14px 0 4px; font-size: 13px; color: var(--c-muted); }
 .pf-subj-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .pf-subj { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid var(--c-line); }
 .pf-subj:first-child { padding-top: 2px; border-top: 0; }
