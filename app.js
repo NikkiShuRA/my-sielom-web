@@ -49,6 +49,7 @@
     eye: '<svg class="set-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.75 8S4 3.75 8 3.75 14.25 8 14.25 8 12 12.25 8 12.25 1.75 8 1.75 8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="1.9" stroke="currentColor" stroke-width="1.4"/></svg>',
     search: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.75" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
     calClock: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="16" cy="16" r="3.6" fill="var(--c-bg)" stroke="currentColor" stroke-width="1.5"/><path d="M16 14.5V16l1 .8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    serverOff: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="16" height="6.5" rx="2" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="13.5" width="16" height="6.5" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 7.25h.01M8 16.75h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M13 7.25h3M13 16.75h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
     wifiOff: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 9.5a13 13 0 0 1 18 0M6 13a8.5 8.5 0 0 1 12 0M9.2 16.4a4 4 0 0 1 5.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
     coffee: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9zM16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2M12 3.5v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   };
@@ -159,11 +160,12 @@
   }
 
   // ---------- API ----------
+  const API_TIMEOUT = 20000; // дольше этого ждать бессмысленно: API завис, а не медленно отвечает
   const apiCache = new Map();
   async function apiFetch(url) {
     if (apiCache.has(url)) return apiCache.get(url);
-    const p = fetch(url)
-      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    const p = fetch(url, { signal: AbortSignal.timeout?.(API_TIMEOUT) })
+      .then((r) => { if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status }); return r.json(); })
       .catch((e) => { apiCache.delete(url); throw e; });
     apiCache.set(url, p);
     return p;
@@ -185,6 +187,28 @@
     return apiFetch(`${API}/lessons/division?divisionName=${q(divName)}&week_id=${week.id}`)
       .then((all) => all.filter((l) => l.cabinet && l.cabinet.id_1c === sel.id));
   };
+
+  // Чья это ошибка. Браузер одинаково отвечает «Failed to fetch» и без интернета, и когда лежит sielom.ru,
+  // поэтому проверяем сам сайт: открывается — интернет есть, не отвечает API колледжа
+  async function classifyError(e) {
+    if (navigator.onLine === false) return "offline";
+    if (e?.status || e?.name === "TimeoutError") return "api";
+    try {
+      await fetch(`${siteRoot}manifest.webmanifest`, { cache: "no-store", signal: AbortSignal.timeout?.(5000) });
+      return "api";
+    } catch {
+      return "offline";
+    }
+  }
+  const ERROR_TEXT = {
+    offline: { icon: ICON.wifiOff, title: "Нет подключения к интернету", text: "Проверьте сеть и попробуйте снова" },
+    api: { icon: ICON.serverOff, title: "Сервер расписания не отвечает", text: "Интернет у вас работает: сейчас недоступен sielom.ru. Попробуйте чуть позже" },
+  };
+  const errorText = () => ERROR_TEXT[state.error?.kind] || ERROR_TEXT.api;
+  async function setError(e) {
+    e.kind = await classifyError(e);
+    state.error = e;
+  }
 
   // ---------- Сотрудники (Strapi) ----------
   let employeeLoadPromise = null;
@@ -558,7 +582,7 @@
     // Избранное смотрят в одном месте — во вкладке «Моё»; в каталоге закладка у элемента только добавляет и убирает
     if (state.sideTab === "mine") {
       if (state.error && !state.divisions.length) {
-        list.innerHTML = listMessage("Не удалось загрузить данные", "Проверьте соединение и обновите страницу");
+        list.innerHTML = listMessage(errorText().title, errorText().text);
         return;
       }
       const byType = buildFavItems();
@@ -572,7 +596,7 @@
     }
 
     if (state.error && !state.divisions.length) {
-      list.innerHTML = listMessage("Не удалось загрузить данные", "Проверьте соединение и обновите страницу");
+      list.innerHTML = listMessage(errorText().title, errorText().text);
       return;
     }
     if (needle) { renderSearchResults(list, needle); return; }
@@ -616,7 +640,7 @@
       loading: { icon: '<span class="spin"></span>', title: "Загружаем расписание…", text: "Обычно это пара секунд", attrs: ' role="status"' },
       unpublished: { icon: ICON.calClock, cls: " empty__icon--muted", title: "Расписание ещё не опубликовано", text: `На ${mode === "day" ? "этот день" : "эту неделю"} данных нет. Загляните позже.` },
       free: { icon: ICON.coffee, title: "Пар нет", text: "Расписание есть, занятий нет — можно выдохнуть" },
-      error: { icon: ICON.wifiOff, cls: " empty__icon--warn", title: "Не удалось загрузить", text: "Проверьте подключение к интернету", retry: true },
+      error: { ...errorText(), cls: " empty__icon--warn", retry: true },
     }[kind];
     return `<div class="empty"${s.attrs || ""}>
       <span class="empty__icon${s.cls || ""}">${s.icon}</span>
@@ -1528,7 +1552,8 @@
       if (state.query.trim()) ensureSearchIndex();
     } catch (e) {
       if (token !== weekToken) return;
-      state.error = e;
+      await setError(e);
+      if (token !== weekToken) return;
     }
     state.loadingWeek = false;
     renderChrome();
@@ -1554,7 +1579,7 @@
   async function reloadList() {
     const token = weekToken;
     renderChrome();
-    try { await refreshDivisionLessons(token); } catch (e) { state.error = e; }
+    try { await refreshDivisionLessons(token); } catch (e) { await setError(e); }
     renderChrome();
   }
 
@@ -2926,7 +2951,7 @@
     renderChrome(); renderWeek();
     try {
       [state.divisions, state.groups] = await Promise.all([loadDivisions(), loadGroups()]);
-    } catch (e) { state.error = e; renderChrome(); renderWeek(); return; }
+    } catch (e) { await setError(e); renderChrome(); renderWeek(); return; }
 
     // Восстановить divisionId и courseFilter из сохранённого выбора
     if (!state.divisionId && state.selected.divisionId) state.divisionId = state.selected.divisionId;
