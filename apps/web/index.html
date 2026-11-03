@@ -1,0 +1,33 @@
+<!doctype html>
+<!--
+  Мой Сиелом — неофициальное расписание СИЭУиП
+  Copyright © 2026 NikkiShuRA · https://github.com/NikkiShuRA/my-sielom-web
+  SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Тема применяется до отрисовки, чтобы не было вспышки светлого экрана
+      try {
+        const t = JSON.parse(localStorage.getItem("sielom2.theme"));
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+    <title>Мой Сиелом — Расписание</title>
+    <link rel="icon" href="%BASE_URL%assets/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="%BASE_URL%favicon.ico" sizes="48x48 32x32 16x16" />
+    <link rel="apple-touch-icon" href="%BASE_URL%assets/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="Мой Сиелом" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="stylesheet" href="%BASE_URL%fonts.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>

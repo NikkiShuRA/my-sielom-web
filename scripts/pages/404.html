@@ -1,0 +1,56 @@
+<!doctype html>
+<!--
+  Мой Сиелом — неофициальное расписание СИЭУиП
+  Copyright © 2026 NikkiShuRA · https://github.com/NikkiShuRA/my-sielom-web
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  GitHub Pages отдаёт этот файл на любой неизвестный адрес, даже внутри next/ и v/<версия>/.
+  Скрипт находит канал по началу адреса и открывает его приложение с ?from=<путь внутри канала>,
+  а приложение возвращает исходный адрес через history.replaceState.
+  __BASE__ при сборке заменяется на корень сайта, например /my-sielom-web/
+-->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Мой Сиелом</title>
+    <script>
+      (function () {
+        var base = "__BASE__";
+        var path = location.pathname;
+        // Уже пришли сюда с ?from= — значит, у канала нет index.html; дальше перенаправлять нельзя, иначе цикл
+        if (path.indexOf(base) !== 0 || /[?&]from=/.test(location.search)) return;
+        var match = path.slice(base.length).match(/^(next\/|v\/[^/]+\/)?(.*)$/);
+        var channel = base + (match[1] || "");
+        var from = "/" + match[2] + location.search + location.hash;
+        location.replace(channel + "?from=" + encodeURIComponent(from));
+      })();
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 48px 16px;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        text-align: center;
+        color: #33332f;
+        background: #f3f3f0;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          color: #edede7;
+          background: #111110;
+        }
+      }
+      a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Такой страницы нет.</p>
+    <p><a href="__BASE__">Открыть расписание</a></p>
+  </body>
+</html>

@@ -5,8 +5,15 @@
 # Внутренние рабочие документы
 DESIGN_PROMPT.md
 
-# Зависимости (если появятся)
+# Зависимости и результаты сборки
 node_modules/
+dist/
+coverage/
+_site/
+e2e/.site/
+playwright-report/
+test-results/
+*.tsbuildinfo
 
 # OS
 .DS_Store

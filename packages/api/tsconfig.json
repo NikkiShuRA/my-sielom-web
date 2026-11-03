@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "outDir": "../../node_modules/.cache/tsc/api",
+    "lib": ["ES2023", "WebWorker"],
+    "types": []
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}

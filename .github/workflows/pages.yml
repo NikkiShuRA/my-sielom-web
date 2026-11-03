@@ -1,11 +1,12 @@
-# Публикует на GitHub Pages два канала: последний релиз в корне и текущий master в /next/.
-# В каждом канале приложение и стенд лежат в его корне, презентация из docs/ — в about/
+# Публикует на GitHub Pages: последний релиз в корне, master в /next/, прошлые релизы в /v/<версия>/.
+# Запускается после зелёного CI в master и после выпуска релиза (его запускает release.yml)
 name: Deploy to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [master]
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -13,37 +14,35 @@ permissions:
   pages: write
   id-token: write
 
-jobs:
-  # Окружение github-pages принимает деплой только с веток, поэтому новый тег запускает обычную публикацию с master
-  release:
-    if: github.ref_type == 'tag'
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref master
-        env:
-          GH_TOKEN: ${{ github.token }}
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
+jobs:
   deploy:
-    if: github.ref_type != 'tag'
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    concurrency:
-      group: pages
-      cancel-in-progress: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          ref: master
-          fetch-depth: 0 # нужны теги, чтобы найти последний релиз
+          # Публикуем ровно тот коммит, который прошёл CI
+          ref: ${{ github.event.workflow_run.head_sha || 'master' }}
+          fetch-depth: 0 # нужны теги, чтобы найти релизы
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
 
       - name: Assemble site
         run: bash .github/workflows/assemble-site.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 

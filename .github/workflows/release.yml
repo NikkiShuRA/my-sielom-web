@@ -1,0 +1,49 @@
+# Тег v* собирает релиз один раз и прикладывает сборки к GitHub Release:
+#   site-root.tar.gz    — для корня сайта, пока релиз актуальный
+#   site-archive.tar.gz — для v/<версия>/, когда выйдет следующий
+# Публикация потом только раскладывает эти архивы и ничего не пересобирает
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+      - name: Build both bases
+        run: |
+          repo="${GITHUB_REPOSITORY#*/}"
+          version="${GITHUB_REF_NAME#v}"
+          npm run build --workspace @sielom/web -- --base="/${repo}/"
+          tar -czf site-root.tar.gz -C apps/web/dist .
+          npm run build --workspace @sielom/web -- --base="/${repo}/v/${version}/"
+          tar -czf site-archive.tar.gz -C apps/web/dist .
+
+      - name: Publish GitHub Release
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # Текст релиза — раздел этой версии из CHANGELOG.md
+          awk -v v="$version" '$0 ~ "^## \\[" v "\\]" {on=1; next} on && /^## \[/ {exit} on' CHANGELOG.md > notes.md
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$version" --notes-file notes.md --verify-tag
+          gh release upload "$GITHUB_REF_NAME" site-root.tar.gz site-archive.tar.gz --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # Окружение github-pages принимает деплой только с веток, поэтому публикацию запускаем с master
+      - run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref master
+        env:
+          GH_TOKEN: ${{ github.token }}

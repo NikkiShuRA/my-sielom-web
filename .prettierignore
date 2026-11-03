@@ -1,0 +1,11 @@
+legacy/
+docs/
+package-lock.json
+dist/
+coverage/
+_site/
+e2e/.site/
+playwright-report/
+test-results/
+CHANGELOG.md
+README.md

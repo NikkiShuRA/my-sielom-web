@@ -1,0 +1,20 @@
+/*
+ * Мой Сиелом — неофициальное расписание СИЭУиП
+ * Copyright © 2026 NikkiShuRA · https://github.com/NikkiShuRA/my-sielom-web
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+.banner {
+  padding: 10px 16px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-line);
+  color: var(--c-text-2);
+  font-weight: 600;
+  /* На 360px строка переносится, а не обрезается */
+  overflow-wrap: anywhere;
+}
+
+.banner[data-variant="stale"] {
+  background: var(--c-warn-bg);
+  border-bottom-color: var(--c-warn-line);
+  color: var(--c-warn);
+}

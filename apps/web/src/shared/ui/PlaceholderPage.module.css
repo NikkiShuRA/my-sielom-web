@@ -1,0 +1,20 @@
+/*
+ * Мой Сиелом — неофициальное расписание СИЭУиП
+ * Copyright © 2026 NikkiShuRA · https://github.com/NikkiShuRA/my-sielom-web
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+.page {
+  display: grid;
+  gap: 8px;
+}
+
+.title {
+  font-size: 22px;
+  /* Длинные ФИО и id не должны раздвигать экран в 360px */
+  overflow-wrap: anywhere;
+}
+
+.note {
+  margin: 0;
+  color: var(--c-muted);
+}

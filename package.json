@@ -5,15 +5,38 @@
   "description": "Мой Сиелом — неофициальное расписание СИЭУиП",
   "license": "AGPL-3.0-or-later",
   "repository": "github:NikkiShuRA/my-sielom-web",
+  "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "workspaces": [
-    "backend"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
-    "start": "npm run start --workspace backend",
-    "dev": "npm run dev --workspace backend",
-    "test": "npm test --workspace backend"
+    "dev": "npm run dev --workspace @sielom/web",
+    "build": "npm run build --workspace @sielom/web",
+    "preview": "npm run preview --workspace @sielom/web",
+    "typecheck": "tsc --build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.14.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.1.0"
   }
 }

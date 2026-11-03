@@ -1,0 +1,132 @@
+/*
+ * Мой Сиелом — неофициальное расписание СИЭУиП
+ * Copyright © 2026 NikkiShuRA · https://github.com/NikkiShuRA/my-sielom-web
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+/* =========================================================
+   Токены
+   ========================================================= */
+:root {
+  /* Цвет */
+  --c-canvas: #f3f3f0;
+  --c-bg: #ffffff;
+  --c-surface: #f6f6f3;
+  --c-surface-2: #efefeb;
+  --c-line: #e8e8e4;
+  --c-line-strong: #d6d6d0;
+
+  --c-text: #33332f;
+  --c-text-2: #5f5f59;
+  --c-muted: #74746d;
+  --c-faint: #b4b4ac;
+
+  --c-accent: #ffe16c;
+  --c-accent-strong: #f2c200;
+  --c-accent-tint: #fff8d6;
+  --c-accent-ink: #6b5300;
+  --c-focus: #d99a00;
+
+  --c-warn: #c25700;
+  --c-warn-bg: #fff2e6;
+  --c-warn-line: #ffd3ad;
+  --c-free: #e9f5e4;
+  --c-free-ink: #2f6b1c;
+  --c-free-line: #bfe0b0;
+
+  --c-on-accent: #33332f; /* текст на жёлтом — одинаковый в обеих темах */
+  --c-fav: #b48a00;
+  --c-scrim: rgba(30, 30, 20, 0.32);
+  --av-bg: 55% 90%;
+  --av-fg: 35% 32%;
+  --logo-bg: transparent;
+
+  /* Форма */
+  --r-2xl: 24px;
+  --r-xl: 18px;
+  --r-lg: 14px;
+  --r-md: 10px;
+  --r-sm: 7px;
+  --r-full: 999px;
+
+  --sh-xs: 0 0 0 1px rgba(40, 40, 20, 0.05), 0 1px 2px rgba(40, 40, 20, 0.04);
+  --sh-sm: 0 0 0 1px rgba(40, 40, 20, 0.05), 0 2px 4px rgba(40, 40, 20, 0.04), 0 6px 16px rgba(40, 40, 20, 0.05);
+  --sh-lg: 0 0 0 1px rgba(40, 40, 20, 0.04), 0 12px 32px rgba(40, 40, 20, 0.12), 0 2px 6px rgba(40, 40, 20, 0.05);
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur: 0.2s;
+
+  /* Размеры */
+  --sidebar-w: 360px;
+  --brand-w: 228px;
+  --day-w: 220px;
+  --gap: 12px;
+
+  --font: "Wix Madefor Display", system-ui, sans-serif;
+  --font-ui: "Inter", system-ui, sans-serif;
+
+  color-scheme: light;
+}
+
+/* Тёмная тема: по системной настройке или явно выбранная */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-canvas: #111110;
+    --c-bg: #1b1b19;
+    --c-surface: #242421;
+    --c-surface-2: #2d2d2a;
+    --c-line: #2f2f2c;
+    --c-line-strong: #43433e;
+    --c-text: #edede7;
+    --c-text-2: #bdbdb5;
+    --c-muted: #92928a;
+    --c-faint: #5e5e58;
+    --c-accent-tint: #2a2614;
+    --c-accent-ink: #ffd84d;
+    --c-focus: #ffd23f;
+    --c-warn: #ff9d57;
+    --c-warn-bg: #33220f;
+    --c-warn-line: #5c3815;
+    --c-free: #18261a;
+    --c-free-ink: #9fd88a;
+    --c-free-line: #2c4a2a;
+    --c-fav: #f2c200;
+    --c-scrim: rgba(0, 0, 0, 0.55);
+    --av-bg: 28% 26%;
+    --av-fg: 60% 82%;
+    --logo-bg: #f3f3ee;
+    --sh-xs: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --sh-sm: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.35);
+    --sh-lg: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --c-canvas: #111110;
+  --c-bg: #1b1b19;
+  --c-surface: #242421;
+  --c-surface-2: #2d2d2a;
+  --c-line: #2f2f2c;
+  --c-line-strong: #43433e;
+  --c-text: #edede7;
+  --c-text-2: #bdbdb5;
+  --c-muted: #92928a;
+  --c-faint: #5e5e58;
+  --c-accent-tint: #2a2614;
+  --c-accent-ink: #ffd84d;
+  --c-focus: #ffd23f;
+  --c-warn: #ff9d57;
+  --c-warn-bg: #33220f;
+  --c-warn-line: #5c3815;
+  --c-free: #18261a;
+  --c-free-ink: #9fd88a;
+  --c-free-line: #2c4a2a;
+  --c-fav: #f2c200;
+  --c-scrim: rgba(0, 0, 0, 0.55);
+  --av-bg: 28% 26%;
+  --av-fg: 60% 82%;
+  --logo-bg: #f3f3ee;
+  --sh-xs: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sh-sm: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.35);
+  --sh-lg: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
