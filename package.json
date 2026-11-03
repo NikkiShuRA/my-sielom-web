@@ -14,9 +14,9 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace @sielom/web",
-    "build": "npm run build --workspace @sielom/web",
-    "preview": "npm run preview --workspace @sielom/web",
+    "dev": "vite apps/web",
+    "build": "vite build apps/web",
+    "preview": "vite preview apps/web",
     "typecheck": "tsc --build",
     "lint": "eslint .",
     "format": "prettier --write .",
