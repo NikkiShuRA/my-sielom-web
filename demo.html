@@ -142,7 +142,7 @@
   const DEVICES = { phone: ["Телефон", 390, 844, "phone"], tablet: ["Планшет", 820, 1100, "tablet"], laptop: ["Ноутбук", 1280, 800, "laptop"], wide: ["Широкий", 1680, 940, "laptop"] };
   const PRESETS = [["Перед парами", 7 * 60 + 55], ["Идёт 1 пара", 9 * 60 + 10], ["Перемена", 9 * 60 + 55], ["Между сменами", 13 * 60 + 20], ["Идёт 4 пара", 14 * 60 + 22], ["Конец пары", 14 * 60 + 55], ["Вечер", 18 * 60 + 40], ["Ночь", 23 * 60 + 30]];
   const SPEEDS = [["1 мин/с", 1], ["5 мин/с", 5], ["20 мин/с", 20]];
-  const MODES = [["ok", "Обычные"], ["loading", "Загрузка"], ["error", "Ошибка сети"], ["unpublished", "Не опубликовано"], ["empty", "Пар нет"]];
+  const MODES = [["ok", "Обычные"], ["loading", "Загрузка"], ["error", "API не отвечает"], ["offline", "Нет сети"], ["unpublished", "Не опубликовано"], ["empty", "Пар нет"]];
 
   // состояние стенда; приложение внутри читает его через window.parent.__demo
   const S = window.__demo = {
@@ -162,7 +162,7 @@
     S.theme = pick("theme", ["system", "light", "dark"]) || S.theme;
     S.view = pick("view", ["week", "day"]) || S.view;
     S.device = pick("device", ["phone", "tablet", "laptop", "wide"]) || S.device;
-    S.mode = pick("mode", ["ok", "loading", "error", "unpublished", "empty"]) || S.mode;
+    S.mode = pick("mode", ["ok", "loading", "error", "offline", "unpublished", "empty"]) || S.mode;
   }
 
   const frame = $("#frame");
@@ -273,6 +273,7 @@
         const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
         window.fetch = async (u, ...a) => {
           const url = String(u), m = P.mode;
+          if (m === "offline") throw new TypeError("Failed to fetch"); // без сети не открывается ничего, даже сам сайт
           if (/\\/(lessons|weeks)\\b/.test(url)) {
             if (m === "error") throw new TypeError("Failed to fetch");
             if (m === "loading") await new Promise(() => {});
