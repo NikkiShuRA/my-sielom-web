@@ -1,0 +1,19 @@
+{
+  "name": "my-sielom-web",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Мой Сиелом — неофициальное расписание СИЭУиП",
+  "license": "AGPL-3.0-or-later",
+  "repository": "github:NikkiShuRA/my-sielom-web",
+  "engines": {
+    "node": ">=18"
+  },
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "start": "npm run start --workspace backend",
+    "dev": "npm run dev --workspace backend",
+    "test": "npm test --workspace backend"
+  }
+}

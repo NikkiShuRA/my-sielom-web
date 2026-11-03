@@ -9,7 +9,12 @@ assemble() {
   src="$(mktemp -d)"
   git archive "$ref" | tar -x -C "$src"
   mkdir -p "$out/about"
-  (cd "$src" && cp -r index.html demo.html app.js styles.css fonts.css favicon.ico manifest.webmanifest assets "$OLDPWD/$out/")
+  if [ -d "$src/frontend" ]; then
+    cp -r "$src/frontend/." "$out/"
+  else
+    # В старых релизах приложение лежит в корне репозитория, а не в frontend/
+    (cd "$src" && cp -r index.html demo.html app.js styles.css fonts.css favicon.ico manifest.webmanifest assets "$OLDPWD/$out/")
+  fi
   cp -r "$src/docs/." "$out/about/"
   # Версия в адресах стилей и скрипта: браузер не покажет новую разметку со старыми файлами из кеша
   local v
