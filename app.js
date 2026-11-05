@@ -9,6 +9,7 @@
 
   // Оба API отдают CORS для любого Origin, поэтому ходим напрямую — сайт работает на любом статическом хостинге
   const API = "https://sielom.ru/schedule/api";
+  const API_BACKUP = "https://timetable.sieup.ru/api"; // зеркало того же API колледжа: те же данные и id, ответы совпадают
   const STRAPI = "https://strapi.sielom.ru/api";
   const DEFAULT_SELECTION = { kind: "group", id: "f961b5a2-26f7-11ee-9f9a-c08a77b51a65", divisionId: "2b807ff8-81a9-11f0-9fba-e029e7085e0b" };
   const WEEKDAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
@@ -162,10 +163,21 @@
   // ---------- API ----------
   const API_TIMEOUT = 20000; // дольше этого ждать бессмысленно: API завис, а не медленно отвечает
   const apiCache = new Map();
+  const fetchJson = (url) => fetch(url, { signal: AbortSignal.timeout?.(API_TIMEOUT) })
+    .then((r) => { if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status }); return r.json(); });
+  // Если sielom.ru не ответил, тот же запрос идёт на резервное зеркало; раз оно выручило — дальше до перезагрузки
+  // ходим сразу туда, чтобы не ждать таймаут основного на каждом запросе
+  let useBackup = false;
+  const fromBackup = (url) => fetchJson(API_BACKUP + url.slice(API.length)).then((d) => { useBackup = true; return d; });
   async function apiFetch(url) {
     if (apiCache.has(url)) return apiCache.get(url);
-    const p = fetch(url, { signal: AbortSignal.timeout?.(API_TIMEOUT) })
-      .then((r) => { if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status }); return r.json(); })
+    const viaApi = url.startsWith(API);
+    const p = (viaApi && useBackup ? fromBackup(url) : fetchJson(url))
+      .catch((e) => {
+        if (!viaApi) throw e;
+        if (useBackup) { useBackup = false; return fetchJson(url); } // зеркало легло — пробуем основной снова
+        return fromBackup(url).catch(() => { throw e; });
+      })
       .catch((e) => { apiCache.delete(url); throw e; });
     apiCache.set(url, p);
     return p;
