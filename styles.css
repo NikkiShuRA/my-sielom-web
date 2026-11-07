@@ -321,9 +321,12 @@ svg { flex-shrink: 0; }
   display: flex; gap: var(--gap);
   transition: gap .3s var(--ease);
 }
-.app.is-collapsed .brand     { width: var(--brand-w); }
-.app.is-collapsed .sidebar   { width: 0; padding-inline: 0; visibility: hidden; pointer-events: none; transition: width .3s var(--ease), padding .3s var(--ease), visibility 0s .35s; }
-.app.is-collapsed .app__body { gap: 0; }
+/* Свёрнутая панель — только на десктопе: на телефоне панель — выезжающий drawer, а шапка и тело остаются как есть */
+@media (min-width: 901px) {
+  .app.is-collapsed .brand     { width: var(--brand-w); }
+  .app.is-collapsed .sidebar   { width: 0; padding-inline: 0; visibility: hidden; pointer-events: none; transition: width .3s var(--ease), padding .3s var(--ease), visibility 0s .35s; }
+  .app.is-collapsed .app__body { gap: 0; }
+}
 
 /* ---------- Логотип ---------- */
 .brand {
@@ -1471,7 +1474,6 @@ a.set-row:hover { background: var(--c-surface-2); }
     transition: transform .28s var(--ease), visibility 0s .28s;
   }
   .app.is-drawer-open .sidebar { transform: none; visibility: visible; transition: transform .28s var(--ease); }
-  .app.is-collapsed .sidebar { width: min(88vw, 380px); padding: calc(16px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
   .drawer-backdrop {
     display: block;
     position: fixed; inset: 0; z-index: 40;
