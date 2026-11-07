@@ -852,15 +852,13 @@
 
   // ---------- Режим «День» ----------
   function stripHTML(days, now, mod = "") {
-    const segments = [[]];
-    state.lessonNums.forEach((n, i) => {
-      if (i && breakRow(state.lessonNums[i - 1], n, days)) segments.push([]);
-      segments.at(-1).push(n);
-    });
+    // Точки идут двумя ровными рядами: верхний — ceil(N/2), нижний — остальные (при нечётном N верхний длиннее на одну)
+    const nums = state.lessonNums, half = Math.ceil(nums.length / 2);
+    const segments = [nums.slice(0, half), nums.slice(half)].filter((seg) => seg.length);
     return `<div class="strip${mod ? ` strip--${mod}` : ""}" role="tablist" aria-label="Дни недели">${days.map((d, i) => {
       const have = new Set(lessonsByNum(isoDate(d)).keys());
       const count = have.size;
-      // на каждую пару сетки — точка (свободная — пустая); ряды разделены теми же длинными перерывами, что и в расписании
+      // на каждую пару сетки — точка (свободная — пустая), раскладка в два ровных ряда
       const rows = segments.map((seg) => `<span>${seg.map((n) => `<i${have.has(n) ? "" : ' class="is-empty"'}></i>`).join("")}</span>`).join("");
       const active = i === state.dayIndex;
       return `<button class="strip__day${active ? " is-active" : ""}${isoDate(d) === isoDate(now) ? " is-today" : ""}" data-pick-day="${i}" role="tab" aria-selected="${active}"
