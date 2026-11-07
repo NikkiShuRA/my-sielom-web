@@ -165,19 +165,30 @@
   const apiCache = new Map();
   const fetchJson = (url) => fetch(url, { signal: AbortSignal.timeout?.(API_TIMEOUT) })
     .then((r) => { if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status }); return r.json(); });
-  // Если sielom.ru не ответил, тот же запрос идёт на резервное зеркало; раз оно выручило — дальше до перезагрузки
-  // ходим сразу туда, чтобы не ждать таймаут основного на каждом запросе
-  let useBackup = false;
-  const fromBackup = (url) => fetchJson(API_BACKUP + url.slice(API.length)).then((d) => { useBackup = true; return d; });
+  // Рабочий API запоминается между заходами: по умолчанию официальный. Запрос идёт сначала на запомненный,
+  // а если тот не ответил — по очереди на остальные; первый ответивший становится рабочим и сохраняется
+  const API_BASES = [API, API_BACKUP];
+  const API_BASE_KEY = "sielom.apiBase";
+  let apiBase = API_BASES.includes(store.get(API_BASE_KEY, API)) ? store.get(API_BASE_KEY, API) : API;
+  const setApiBase = (base) => { if (base !== apiBase) { apiBase = base; store.set(API_BASE_KEY, base); } };
+  async function fetchApi(path) {
+    const order = [apiBase, ...API_BASES.filter((b) => b !== apiBase)];
+    let error;
+    for (const base of order) {
+      try { const data = await fetchJson(base + path); setApiBase(base); return data; }
+      catch (e) { error ??= e; }
+    }
+    throw error;
+  }
+  // Работаем через резерв — в фоне проверяем, не ожил ли официальный: ожил — со следующего захода снова он
+  if (apiBase !== API) {
+    fetch(`${API}/divisions`, { cache: "no-store", signal: AbortSignal.timeout?.(API_TIMEOUT) })
+      .then((r) => { if (r.ok) store.set(API_BASE_KEY, API); })
+      .catch(() => {});
+  }
   async function apiFetch(url) {
     if (apiCache.has(url)) return apiCache.get(url);
-    const viaApi = url.startsWith(API);
-    const p = (viaApi && useBackup ? fromBackup(url) : fetchJson(url))
-      .catch((e) => {
-        if (!viaApi) throw e;
-        if (useBackup) { useBackup = false; return fetchJson(url); } // зеркало легло — пробуем основной снова
-        return fromBackup(url).catch(() => { throw e; });
-      })
+    const p = (url.startsWith(API) ? fetchApi(url.slice(API.length)) : fetchJson(url))
       .catch((e) => { apiCache.delete(url); throw e; });
     apiCache.set(url, p);
     return p;
