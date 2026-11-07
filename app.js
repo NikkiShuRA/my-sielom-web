@@ -2011,7 +2011,7 @@
     const d = parseISO(l0.date);
     const subjects = subjectGroups(lessons);
     const mixedSubjects = subjects.length > 1;
-    const subject = subjects.map(([s]) => s).join(" / ");
+    const subject = mixedSubjects ? "Разные дисциплины у подгрупп" : subjects.map(([s]) => s).join(" / ");
     // у строки подгруппы — её собственный предмет, если у подгрупп они разные
     const rowSubject = (l) => mixedSubjects ? `<span class="sg-row__subject">${esc(subjectName(l))}</span>` : "";
     const multi = lessons.length > 1;
@@ -2026,6 +2026,12 @@
     $("#mHead").innerHTML = `
       <div class="modal__meta">
         <span class="meta-item">${ICON.calendar}${esc(`${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`)}</span>
+    } else if (mixedSubjects) {
+      // У подгрупп разные дисциплины: каждая — отдельным блоком (дисциплина, преподаватель, место)
+      body = lessons.map((l) => section(
+        partLabel(l) + (l.subgroup && !allSameGroup && l.group ? ` · ${l.group.name}` : ""),
+        `<div class="msub"><div class="msub__subject">${esc(subjectName(l))}</div>${personHTML(l.teacher)}${placeHTML(l)}</div>`
+      )).join("");
         <span class="meta-item">${ICON.clock}${esc(timeLabel(lessons))}</span>
         <span class="meta-item">${esc(l0.lessonNumber)}-я пара</span>
       </div>
