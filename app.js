@@ -19,9 +19,7 @@
   const KIND_LABEL = { group: "Группа", teacher: "Преподаватель", room: "Кабинет", building: "Корпус · все кабинеты", profile: "Профиль" };
   // Между парами показываем длинный перерыв (от 25 мин) разделителем «Перерыв N мин». Он берётся из самих данных,
   // поэтому не зависит от того, как называть смены и каким бывает график звонков в корпусе
-  const LONG_BREAK = 25;
   // В режиме «День» подписываем и обычные перемены (от 5 мин): строк мало, и видно, сколько отдыхать между парами
-  const SHOW_BREAK = 5;
   const EMPLOYEE_CACHE_KEY = "sielom.employees.v1";
   const EMPLOYEE_CACHE_TTL = 24 * 60 * 60 * 1000;
   // В API нет учебного плана и академических часов: одна пара считается за два часа, в какой бы день и сколько бы минут она ни шла
@@ -818,16 +816,7 @@
     // Карточки лежат прямо в колонке: строки сетки общие для всех дней (subgrid),
     // поэтому высота строки равна самой высокой карточке среди дней
     const items = [];
-    let prevNum = null;
     for (const num of state.lessonNums) {
-      if (prevNum !== null && breakRow(prevNum, num, weekDays)) {
-        // строка-разделитель общая для всех дней (чтобы сетка была ровной); подпись — только если с обеих сторон
-        // реальные пары этого дня: время пустой пары в API нет, и перерыв от него был бы выдуманным
-        const a = byNum.get(prevNum)?.[0], b = byNum.get(num)?.[0];
-        items.push(a && b ? breakDividerHTML(toMin(b.timeStart) - toMin(a.timeEnd)) : '<div class="shift-divider" role="separator"></div>');
-      }
-      prevNum = num;
-
       const lessons = byNum.get(num);
       if (!lessons) { items.push(slotHTML(num, iso)); continue; }
       items.push(lessonCardHTML(lessons, date, now, { next: num === next }));
@@ -904,21 +893,19 @@
         const time = spanOf(lessons);
         if (prev) {
           const gap = toMin(time.timeStart) - toMin(prev.time.timeEnd);
-          const gapTiming = gap > 0 ? timing({ timeStart: prev.time.timeEnd, timeEnd: time.timeStart }, date, now) : null;
-          const gp = gapTiming?.kind === "now" ? ` style="--p:${gapTiming.progress / 100}"` : "";
           const missed = state.lessonNums.filter((n) => n > prev.num && n < num);
           if (missed.length) {
+            // окно — тоже «момент» на линии: прошло / идёт / впереди, чтобы жёлтая линия не рвалась
+            const gapTiming = gap > 0 ? timing({ timeStart: prev.time.timeEnd, timeEnd: time.timeStart }, date, now) : null;
+            const gp = gapTiming?.kind === "now" ? ` style="--p:${gapTiming.progress / 100}"` : "";
             rows += `<li class="tl-row tl-row--window${gapTiming ? ` is-${gapTiming.kind}` : ""}"${gp}>
               <div class="tl-time"></div>
               <span class="tl-rail"><span class="tl-dot"></span></span>
               <div class="tl-body">
                 <span class="tl-num">${missed.join(", ")} ${missed.length > 1 ? "пары" : "пара"}</span>
-                <div class="window">Окно${gap > 0 ? ` · свободно ${esc(prev.time.timeEnd)} – ${esc(time.timeStart)}, ${fmtDuration(gap)}` : ""}</div>
+                <div class="window">Окно</div>
               </div>
             </li>`;
-          } else if (gap >= SHOW_BREAK || gap < 0) {
-            // перерыв — тоже «момент» на линии: ещё не начался / идёт / прошёл, со своей точкой и прогрессом
-            rows += `<li class="tl-row tl-row--shift${gapTiming ? ` is-${gapTiming.kind}` : ""}"${gp}><span></span><span class="tl-rail"><span class="tl-dot tl-dot--break"></span></span>${breakDividerHTML(gap)}</li>`;
           }
         }
         prev = { num, time };
@@ -1535,18 +1522,6 @@
     return new Map([...gaps].map(([n, a]) => [n, median(a)]));
   }
 
-  // Перерыв между парами prev и num (мин) в указанный день: по звонкам этого дня, а если их нет — по типичному перерыву
-  function gapBetween(prev, num, iso) {
-    const a = iso ? bellAt(iso, prev) : state.bells.get(prev), b = iso ? bellAt(iso, num) : state.bells.get(num);
-    if (a && b) return toMin(b.timeStart) - toMin(a.timeEnd);
-    return num === prev + 1 ? state.breaks.get(prev) ?? 0 : 0;
-  }
-  // Строка «длинный перерыв» общая для всех дней недели (сетка выравнивается по ней): нужна, если хотя бы в один день перерыв не короче LONG_BREAK
-  const breakRow = (prev, num, days) => days.some((d) => gapBetween(prev, num, isoDate(d)) >= LONG_BREAK);
-  // По времени из API следующая пара может начинаться раньше, чем кончается предыдущая (в корпусе №1 6-я до 18:10, 7-я с 18:00) —
-  // так и пишем, а не «перерыв −10 мин»
-  const breakDividerHTML = (min) => `<div class="shift-divider${min < 0 ? " is-overlap" : ""}" role="separator">${min > 0 ? `Перерыв ${fmtDuration(min)}` : min < 0 ? `Пары пересекаются на ${fmtDuration(-min)}` : "Без перерыва"}</div>`;
-
   let weekToken = 0;
   async function refreshWeek() {
     const token = ++weekToken;
@@ -2024,12 +1999,6 @@
     $("#mHead").innerHTML = `
       <div class="modal__meta">
         <span class="meta-item">${ICON.calendar}${esc(`${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`)}</span>
-    } else if (mixedSubjects) {
-      // У подгрупп разные дисциплины: каждая — отдельным блоком (дисциплина, преподаватель, место)
-      body = lessons.map((l) => section(
-        partLabel(l) + (l.subgroup && !allSameGroup && l.group ? ` · ${l.group.name}` : ""),
-        `<div class="msub"><div class="msub__subject">${esc(subjectName(l))}</div>${personHTML(l.teacher)}${placeHTML(l)}</div>`
-      )).join("");
         <span class="meta-item">${ICON.clock}${esc(timeLabel(lessons))}</span>
         <span class="meta-item">${esc(l0.lessonNumber)}-я пара</span>
       </div>
@@ -2057,6 +2026,12 @@
       body = section("Где", placeHTML(l0))
         + section("Преподаватель", personHTML(l0.teacher))
         + (groupRow ? section("Группа", groupRow) : "");
+    } else if (mixedSubjects) {
+      // У подгрупп разные дисциплины: каждая — отдельным блоком (дисциплина, преподаватель, место)
+      body = lessons.map((l) => section(
+        partLabel(l) + (l.subgroup && !allSameGroup && l.group ? ` · ${l.group.name}` : ""),
+        `<div class="msub"><div class="msub__subject">${esc(subjectName(l))}</div>${personHTML(l.teacher)}${placeHTML(l)}</div>`
+      )).join("");
     } else if (sameTeacher) {
       // Один преподаватель ведёт несколько подгрупп / групп
       body = (sameRoom ? section("Где", placeHTML(l0)) : "")
