@@ -7,10 +7,8 @@
   const $ = (s, root = document) => root.querySelector(s);
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 
-  // Оба API отдают CORS для любого Origin, поэтому ходим напрямую — сайт работает на любом статическом хостинге
-  const API = "https://sielom.ru/schedule/api";
-  const API_BACKUP = "https://timetable.sieup.ru/api"; // зеркало того же API колледжа: те же данные и id, ответы совпадают
-  const STRAPI = "https://strapi.sielom.ru/api";
+  // Адреса API и их резервы — в config.js (SIELOM_SOURCES). Оба API отдают CORS для любого Origin, поэтому ходим
+  // напрямую — сайт работает на любом статическом хостинге
   const DEFAULT_SELECTION = { kind: "group", id: "f961b5a2-26f7-11ee-9f9a-c08a77b51a65", divisionId: "2b807ff8-81a9-11f0-9fba-e029e7085e0b" };
   const WEEKDAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
   const WEEKDAYS_FULL = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
@@ -20,7 +18,7 @@
   // Между парами показываем длинный перерыв (от 25 мин) разделителем «Перерыв N мин». Он берётся из самих данных,
   // поэтому не зависит от того, как называть смены и каким бывает график звонков в корпусе
   // В режиме «День» подписываем и обычные перемены (от 5 мин): строк мало, и видно, сколько отдыхать между парами
-  const EMPLOYEE_CACHE_KEY = "sielom.employees.v1";
+  const EMPLOYEE_CACHE_KEY = "sielom.employees.v2"; // v2: фото с нового сайта; в v1 ссылки на strapi.sielom.ru, его больше нет
   const EMPLOYEE_CACHE_TTL = 24 * 60 * 60 * 1000;
   // В API нет учебного плана и академических часов: одна пара считается за два часа, в какой бы день и сколько бы минут она ни шла
   const PAIR_HOURS = 2;
@@ -116,6 +114,7 @@
     breaks: new Map(), // номер пары → типичный перерыв до следующей, мин
     lessonNums: [],
     employeePhotos: new Map(),
+    staleAt: null, // не ответил ни один адрес API, и показаны сохранённые данные: когда они были получены
     searchIndex: null, // { weekId, teachers: [], rooms: [] } — для глобального поиска
     error: null,
     loadingWeek: true,
@@ -159,58 +158,167 @@
   }
 
   // ---------- API ----------
+  // Сервисы и их адреса — в config.js. Здесь только то, как выбирается рабочий адрес:
+  // 1. На каждый сервис выбор делается один раз на загрузку. Есть запомненный адрес — сразу он. Нет — проверочный запрос
+  //    (probe) по адресам по очереди, и первый ответивший JSON нужной формы становится рабочим. Пока идёт выбор,
+  //    остальные запросы его ждут, а не стучатся сами.
+  // 2. Запоминаем адрес, который сработал, на SOURCE_TTL: если основной лежит или завис, следующий заход сразу идёт
+  //    на резерв. Пока работаем через резерв, в фоне проверяем основной; ожил — со следующего захода снова он.
+  // 3. Если адрес отказал посреди работы (сеть, тайм-аут, 5xx, HTML вместо JSON), он исключается и выбор повторяется.
+  //    Обычный ответ API с ошибкой (404 JSON «нет такой группы») — это не повод уходить на резерв.
   const API_TIMEOUT = 20000; // дольше этого ждать бессмысленно: API завис, а не медленно отвечает
-  const apiCache = new Map();
-  const fetchJson = (url) => fetch(url, { signal: AbortSignal.timeout?.(API_TIMEOUT) })
-    .then((r) => { if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status }); return r.json(); });
-  // Рабочий API запоминается между заходами: по умолчанию официальный. Запрос идёт сначала на запомненный,
-  // а если тот не ответил — по очереди на остальные; первый ответивший становится рабочим и сохраняется
-  const API_BASES = [API, API_BACKUP];
-  const API_BASE_KEY = "sielom.apiBase";
-  let apiBase = API_BASES.includes(store.get(API_BASE_KEY, API)) ? store.get(API_BASE_KEY, API) : API;
-  const setApiBase = (base) => { if (base !== apiBase) { apiBase = base; store.set(API_BASE_KEY, base); } };
-  async function fetchApi(path) {
-    const order = [apiBase, ...API_BASES.filter((b) => b !== apiBase)];
-    let error;
-    for (const base of order) {
-      try { const data = await fetchJson(base + path); setApiBase(base); return data; }
-      catch (e) { error ??= e; }
-    }
-    throw error;
-  }
-  // Работаем через резерв — в фоне проверяем, не ожил ли официальный: ожил — со следующего захода снова он
-  if (apiBase !== API) {
-    fetch(`${API}/divisions`, { cache: "no-store", signal: AbortSignal.timeout?.(API_TIMEOUT) })
-      .then((r) => { if (r.ok) store.set(API_BASE_KEY, API); })
-      .catch(() => {});
-  }
-  async function apiFetch(url) {
-    if (apiCache.has(url)) return apiCache.get(url);
-    const p = (url.startsWith(API) ? fetchApi(url.slice(API.length)) : fetchJson(url))
-      .catch((e) => { apiCache.delete(url); throw e; });
-    apiCache.set(url, p);
-    return p;
+  const PROBE_TIMEOUT = 8000; // проверка адреса: живой API отвечает за секунду-две, а дальше есть резерв
+  const SOURCE_KEY = "sielom.source.v2"; // { schedule: { id, at } } — какой адрес сработал
+  const SOURCE_TTL = 6 * 60 * 60 * 1000;
+  const DOWN_PAUSE = 60 * 1000; // не ответил ни один адрес: столько не стучимся снова, пока не нажмут «Повторить»
+  try { localStorage.removeItem("sielom.apiBase"); } catch {} // ключ старого механизма (v0.3.0), там адреса, которых больше нет
+
+  const apiError = (message, extra) => Object.assign(new Error(message), extra);
+  // «Адрес не тот»: нет ответа, сервер упал или отдал не API. Ошибка без кода — сеть, CORS, тайм-аут или битый JSON
+  const isSourceFailure = (e) => e.sourceFailure ?? !e.status;
+  async function fetchJson(url, timeout = API_TIMEOUT) {
+    const r = await fetch(url, { signal: AbortSignal.timeout?.(timeout) });
+    // страница «не найдено» нового сайта приходит как HTML: это не ответ API, а признак, что API здесь больше нет
+    if (!/json/i.test(r.headers.get("content-type") || "")) throw apiError(`HTTP ${r.status}, ответ не JSON`, { status: r.status, sourceFailure: true });
+    if (!r.ok) throw apiError(`HTTP ${r.status}`, { status: r.status, sourceFailure: r.status >= 500 });
+    return r.json();
   }
 
+  const apiCache = new Map(); // запросы этой загрузки: одинаковые не повторяются
+  const cacheKey = (service, path) => `${service} ${path}`;
+  const sourceMemory = store.get(SOURCE_KEY, {}) || {};
+  const sourceState = {}; // сервис → { pick: Promise<адрес> | null, dead: Set<id> }
+  const mirrorsOf = (service) => SIELOM_SOURCES[service].mirrors;
+  function orderedMirrors(service) {
+    const mem = sourceMemory[service];
+    const known = mem && Date.now() - mem.at < SOURCE_TTL && mirrorsOf(service).find((m) => m.id === mem.id);
+    return known ? [known, ...mirrorsOf(service).filter((m) => m !== known)] : mirrorsOf(service);
+  }
+  // Время ставим только при смене адреса: иначе запомненный резерв продлевался бы каждым запросом и не истекал
+  function rememberSource(service, mirror) {
+    const mem = sourceMemory[service];
+    if (mem?.id === mirror.id && Date.now() - mem.at < SOURCE_TTL) return;
+    sourceMemory[service] = { id: mirror.id, at: Date.now() };
+    store.set(SOURCE_KEY, sourceMemory);
+  }
+  async function probeSource(service, mirror) {
+    const { probe } = SIELOM_SOURCES[service];
+    const data = await fetchJson(mirror.base + probe.path, PROBE_TIMEOUT);
+    if (!probe.valid(data)) throw apiError("ответ не похож на API", { sourceFailure: true });
+    return data;
+  }
+  function pickSource(service) {
+    const s = (sourceState[service] ??= { pick: null, dead: new Set(), probed: null, down: null });
+    if (s.down && Date.now() < s.down.until) return Promise.reject(s.down.error);
+    // адрес из памяти берём сразу, без проверки: запросы не ждут лишнего, а если он сломался, это заметит первый же запрос
+    const known = orderedMirrors(service)[0];
+    if (!s.pick && sourceMemory[service]?.id === known.id && !s.dead.has(known.id)) s.pick = Promise.resolve(known);
+    return s.pick ??= (async () => {
+      let error;
+      for (const mirror of orderedMirrors(service)) {
+        if (s.dead.has(mirror.id)) continue;
+        try {
+          // проверочный запрос обычно тот же, что нужен сайту (корпуса): его ответ отдаём этому запросу, а не просим второй раз
+          s.probed = { mirror, data: await probeSource(service, mirror) };
+          rememberSource(service, mirror);
+          return mirror;
+        } catch (e) { error ??= e; s.dead.add(mirror.id); }
+      }
+      // не ответил никто: остальные запросы сразу получают ту же ошибку (и сохранённые данные), а не проверяют всё заново
+      s.pick = null; s.dead.clear(); s.down = { until: Date.now() + DOWN_PAUSE, error };
+      throw error;
+    })();
+  }
+  async function request(service, path) {
+    for (let attempt = 0; attempt <= mirrorsOf(service).length; attempt++) {
+      const mirror = await pickSource(service);
+      const s = sourceState[service];
+      if (path === SIELOM_SOURCES[service].probe.path && s.probed?.mirror === mirror) {
+        const { data } = s.probed; s.probed = null; return data;
+      }
+      try { return await fetchJson(mirror.base + path); }
+      catch (e) {
+        if (!isSourceFailure(e)) throw e;
+        // адрес отказал посреди работы: исключаем и выбираем заново, если этого ещё не сделал параллельный запрос
+        if (s.pick && (await s.pick.catch(() => null)) === mirror) { s.dead.add(mirror.id); s.pick = null; }
+        if (mirrorsOf(service).every((m) => s.dead.has(m.id))) { s.dead.clear(); s.down = { until: Date.now() + DOWN_PAUSE, error: e }; throw e; }
+      }
+    }
+    throw apiError("ни один адрес не ответил", { sourceFailure: true });
+  }
+  // «Повторить»: забываем ответы этой загрузки и то, что сервер не отвечал
+  function resetApi() {
+    apiCache.clear();
+    for (const s of Object.values(sourceState)) s.down = null;
+  }
+  // Работаем через резерв — в фоне проверяем основной адрес; ожил — со следующего захода снова он
+  for (const service of Object.keys(SIELOM_SOURCES)) {
+    const [primary] = mirrorsOf(service);
+    if (orderedMirrors(service)[0] !== primary) {
+      probeSource(service, primary).then(() => rememberSource(service, primary)).catch(() => {});
+    }
+  }
+
+  // Последние удачные ответы расписания. Если не ответил ни один адрес, показываем их с пометкой «данные от …»,
+  // а не пустой экран. Храним только небольшие ответы: свою группу или преподавателя, недели, корпуса и группы.
+  // Весь корпус (около 0,5 МБ на неделю) не храним: localStorage на такое не рассчитан
+  const LASTGOOD_KEY = "sielom.lastgood.v1";
+  const LASTGOOD_PATHS = /^schedule \/(divisions|groups|weeks\/date\/|lessons\/(group|teacher)\b)/;
+  const LASTGOOD_MAX = 24;
+  function saveLastGood(key, data) {
+    if (!LASTGOOD_PATHS.test(key)) return;
+    const all = store.get(LASTGOOD_KEY, {}) || {};
+    all[key] = { at: Date.now(), data };
+    const keys = Object.keys(all).sort((a, b) => all[b].at - all[a].at);
+    for (const k of keys.slice(LASTGOOD_MAX)) delete all[k];
+    store.set(LASTGOOD_KEY, all);
+  }
+  function findLastGood(key) {
+    const all = store.get(LASTGOOD_KEY, {}) || {};
+    if (all[key]) return all[key];
+    // неделя по дате: подойдёт сохранённая неделя, в которую эта дата попадает, даже если её спрашивали по другому дню
+    const date = key.match(/^schedule \/weeks\/date\/(\d{4}-\d{2}-\d{2})$/)?.[1];
+    if (!date) return null;
+    return Object.entries(all).find(([k, v]) => k.startsWith("schedule /weeks/date/")
+      && v.data[0] && v.data[0].dateStart.slice(0, 10) <= date && date <= v.data[0].dateEnd.slice(0, 10))?.[1] || null;
+  }
+
+  function apiFetch(service, path) {
+    const key = cacheKey(service, path);
+    if (apiCache.has(key)) return apiCache.get(key);
+    const p = request(service, path).then(
+      (data) => { saveLastGood(key, data); return data; },
+      (e) => {
+        apiCache.delete(key); // устаревшее не кэшируем: следующий запрос снова попробует сеть
+        const saved = isSourceFailure(e) && findLastGood(key);
+        if (!saved) throw e;
+        state.staleAt = Math.min(state.staleAt || Infinity, saved.at);
+        return saved.data;
+      });
+    apiCache.set(key, p);
+    return p;
+  }
+  const api = (path) => apiFetch("schedule", path);
+
   const q = (s) => encodeURIComponent(s);
-  const loadDivisions = () => apiFetch(`${API}/divisions`);
-  const loadGroups    = () => apiFetch(`${API}/groups`);
+  const loadDivisions = () => api("/divisions");
+  const loadGroups    = () => api("/groups");
   const loadWeek = async (offset) => {
     const d = new Date(); d.setDate(d.getDate() + offset * 7);
-    const list = await apiFetch(`${API}/weeks/date/${isoDate(d)}`);
+    const list = await api(`/weeks/date/${isoDate(d)}`);
     return list[0] || null;
   };
   const loadLessonsFor = (sel, week, divName) => {
-    if (sel.kind === "group")   return apiFetch(`${API}/lessons/group/${q(sel.id)}?week_id=${week.id}`);
-    if (sel.kind === "teacher") return apiFetch(`${API}/lessons/teacher?teacherName=${q(sel.id)}&week_id=${week.id}`);
+    if (sel.kind === "group")   return api(`/lessons/group/${q(sel.id)}?week_id=${week.id}`);
+    if (sel.kind === "teacher") return api(`/lessons/teacher?teacherName=${q(sel.id)}&week_id=${week.id}`);
     // весь корпус — тот же запрос, что и для списка кабинетов, без фильтра (apiFetch отдаст его из кэша)
-    if (sel.kind === "building") return apiFetch(`${API}/lessons/division?divisionName=${q(divName)}&week_id=${week.id}`);
-    return apiFetch(`${API}/lessons/division?divisionName=${q(divName)}&week_id=${week.id}`)
+    if (sel.kind === "building") return api(`/lessons/division?divisionName=${q(divName)}&week_id=${week.id}`);
+    return api(`/lessons/division?divisionName=${q(divName)}&week_id=${week.id}`)
       .then((all) => all.filter((l) => l.cabinet && l.cabinet.id_1c === sel.id));
   };
 
-  // Чья это ошибка. Браузер одинаково отвечает «Failed to fetch» и без интернета, и когда лежит sielom.ru,
-  // поэтому проверяем сам сайт: открывается — интернет есть, не отвечает API колледжа
+  // Чья это ошибка. Браузер одинаково отвечает «Failed to fetch» и без интернета, и когда лежит API института,
+  // поэтому проверяем сам сайт: открывается — интернет есть, не отвечает API
   async function classifyError(e) {
     if (navigator.onLine === false) return "offline";
     if (e?.status || e?.name === "TimeoutError") return "api";
@@ -223,7 +331,7 @@
   }
   const ERROR_TEXT = {
     offline: { icon: ICON.wifiOff, title: "Нет подключения к интернету", text: "Проверьте сеть и попробуйте снова" },
-    api: { icon: ICON.serverOff, title: "Сервер расписания не отвечает", text: "Интернет у вас работает: сейчас недоступен sielom.ru. Попробуйте чуть позже" },
+    api: { icon: ICON.serverOff, title: "Сервер расписания не отвечает", text: "Интернет у вас работает, а сервер расписания института сейчас недоступен. Попробуйте чуть позже" },
   };
   const errorText = () => ERROR_TEXT[state.error?.kind] || ERROR_TEXT.api;
   async function setError(e) {
@@ -231,7 +339,17 @@
     state.error = e;
   }
 
-  // ---------- Сотрудники (Strapi) ----------
+  // ---------- Сотрудники (CMS сайта на Strapi) ----------
+  // CMS отдаёт путь к файлу (/uploads/<файл>), а файлы лежат в хранилище адреса (media в config.js).
+  // Для аватарки хватает миниатюры: оригиналы весят сотни килобайт
+  function photoUrl(photo, mirror) {
+    const url = photo?.formats?.thumbnail?.url || photo?.url;
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    const file = url.match(/^\/?uploads\/(.+)$/)?.[1];
+    if (file && mirror.media) return `${mirror.media}/${file}`;
+    return new URL(url, mirror.base).href;
+  }
   let employeeLoadPromise = null;
   async function ensureEmployees() {
     if (employeeLoadPromise) return employeeLoadPromise;
@@ -244,9 +362,10 @@
       const map = new Map();
       let start = 0; const limit = 100;
       for (;;) {
-        const res = await apiFetch(`${STRAPI}/employees?populate=photo&pagination[limit]=${limit}&pagination[start]=${start}`);
+        const res = await apiFetch("employees", `/employees?populate=photo&pagination[limit]=${limit}&pagination[start]=${start}`);
+        const mirror = await pickSource("employees");
         for (const e of res.data) {
-          const url = e.attributes?.photo?.data?.attributes?.url;
+          const url = photoUrl(e.attributes?.photo?.data?.attributes, mirror);
           if (url) map.set(e.attributes.name, url);
         }
         start += limit;
@@ -307,9 +426,19 @@
   function avatarHTML(name, cls = "avatar") {
     const url = state.employeePhotos.get(name);
     return url
-      ? `<span class="${cls}"><img src="${esc(url)}" alt="" loading="lazy"></span>`
+      ? `<span class="${cls}" data-name="${esc(name)}"><img src="${esc(url)}" alt="" loading="lazy"></span>`
       : `<span class="${cls}" style="--h:${hue(name)}" aria-hidden="true">${esc(initials(name.split(/\s+/)))}</span>`;
   }
+  // Фото не загрузилось (хранилище недоступно, файл удалён) — вместо пустой рамки инициалы, как у тех, у кого фото нет
+  document.addEventListener("error", (e) => {
+    const box = e.target instanceof HTMLImageElement && e.target.parentElement;
+    if (!box?.dataset.name) return;
+    const name = box.dataset.name;
+    box.removeAttribute("data-name");
+    box.style.setProperty("--h", hue(name));
+    box.setAttribute("aria-hidden", "true");
+    box.textContent = initials(name.split(/\s+/));
+  }, true);
 
   // ---------- Версия сайта: в корне — последний релиз, в next/ — текущий master, в v/<версия>/ — прошлые релизы ----------
   const sitePath = location.pathname.match(/\/(next|v\/[^/]+)\//)?.[1] || "";
@@ -513,7 +642,7 @@
     searchIndexWeek = weekId;
     searchIndexPromise = (async () => {
       const parts = await Promise.all(state.divisions.map((d) =>
-        apiFetch(`${API}/lessons/division?divisionName=${q(d.name)}&week_id=${weekId}`).then((l) => [d, l]).catch(() => [d, []])));
+        api(`/lessons/division?divisionName=${q(d.name)}&week_id=${weekId}`).then((l) => [d, l]).catch(() => [d, []])));
       const teachers = new Map(), rooms = new Map();
       for (const [d, lessons] of parts) {
         for (const l of lessons) {
@@ -1275,7 +1404,19 @@
   // Листаем по дням: режим «День» и «Весь корпус» (неделя всех кабинетов разом не читается)
   const dayNav = () => !isProfile() && (state.view === "day" || isBuilding()); // профиль — сводка недели, листается по неделям
 
+  // Пометка «показаны сохранённые данные»: сервер не ответил, но расписание с прошлого раза есть
+  function renderStale() {
+    const note = $("#staleNote");
+    note.hidden = !state.staleAt || !!state.error || state.loadingWeek;
+    if (note.hidden) return;
+    const d = new Date(state.staleAt), now = new Date();
+    const when = isoDate(d) === isoDate(now) ? "сегодня" : `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+    note.innerHTML = `${ICON.alert}<span>Нет связи с сервером. Расписание сохранено ${when} в ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}</span><button class="stale-note__btn">Обновить</button>`;
+  }
+  $("#staleNote").addEventListener("click", (e) => { if (e.target.closest(".stale-note__btn")) { resetApi(); refreshWeek(); } });
+
   function renderWeek({ keepScroll = false } = {}) {
+    renderStale();
     const week = $("#week");
     const scroll = [week.scrollLeft, week.scrollTop];
     week.removeAttribute("data-anim");
@@ -1525,7 +1666,7 @@
   let weekToken = 0;
   async function refreshWeek() {
     const token = ++weekToken;
-    state.loadingWeek = true; state.error = null;
+    state.loadingWeek = true; state.error = null; state.staleAt = null;
     renderWeek();
     try {
       const week = await loadWeek(state.weekOffset);
@@ -1537,13 +1678,14 @@
       const [lessons, curated] = await Promise.all([
         week && sel ? loadLessonsFor(sel, week, divName) : [],
         week && isProfile() && profile.role === "teacher"
-          ? Promise.all(profile.curated.map((g) => apiFetch(`${API}/lessons/group/${q(g.id)}?week_id=${week.id}`).then((l) => [g.id, l]).catch(() => [g.id, []])))
+          ? Promise.all(profile.curated.map((g) => api(`/lessons/group/${q(g.id)}?week_id=${week.id}`).then((l) => [g.id, l]).catch(() => [g.id, []])))
           : [],
       ]);
       if (token !== weekToken) return;
       state.lessons = lessons;
       state.curatedLessons = new Map(curated);
-      await refreshDivisionLessons(token);
+      // корпус целиком не сохраняется на случай без связи: без него обойдёмся, если своё расписание уже показано из сохранённого
+      await refreshDivisionLessons(token).catch((e) => { if (!state.staleAt) throw e; state.divisionLoaded = true; });
       buildBells();
       if (state.query.trim()) ensureSearchIndex();
     } catch (e) {
@@ -1562,7 +1704,7 @@
     state.divisionLessons = [];
     const d = divisionById(state.divisionId);
     if (!d || !state.week) { state.divisionLoaded = true; return; }
-    const lessons = await apiFetch(`${API}/lessons/division?divisionName=${q(d.name)}&week_id=${state.week.id}`);
+    const lessons = await api(`/lessons/division?divisionName=${q(d.name)}&week_id=${state.week.id}`);
     if (token !== undefined && token !== weekToken) return;
     state.divisionLessons = lessons;
     for (const l of lessons) {
@@ -1870,7 +2012,7 @@
       inp.focus();
       return;
     }
-    if (e.target.closest("#retry")) { apiCache.clear(); refreshWeek(); return; }
+    if (e.target.closest("#retry")) { resetApi(); refreshWeek(); return; }
 
     const openDay = e.target.closest("[data-open-day]");
     if (openDay) { state.view = "day"; state.dayIndex = Number(openDay.dataset.openDay); renderChrome(); renderWeek(); return; }
@@ -2411,7 +2553,7 @@
     const owner = tallyOwner(home);
     const today = isoDate(new Date());
     let weeks;
-    try { weeks = await apiFetch(`${API}/weeks`); }
+    try { weeks = await api(`/weeks`); }
     catch { state.tally = { owner, status: "error" }; rerenderTally(); return; }
     const range = academicYearWeeks(weeks, today);
     const lastId = range.at(-1)?.id;

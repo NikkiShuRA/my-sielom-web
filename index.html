@@ -21,7 +21,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-title" content="Мой Сиелом">
   <meta name="mobile-web-app-capable" content="yes">
-  <link rel="preconnect" href="https://sielom.ru" crossorigin>
+  <link rel="preconnect" href="https://timetable.sielom.ru" crossorigin>
   <link rel="preload" href="assets/fonts/inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/wix-madefor-display-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="fonts.css">
@@ -149,7 +149,7 @@
       </div>
 
       <div class="settings">
-        <a class="settings__row" href="https://sielom.ru/timetable/" target="_blank" rel="noopener" title="Расписание на сайте института, sielom.ru">
+        <a class="settings__row" href="https://sielom.ru/schedule" target="_blank" rel="noopener" title="Расписание на сайте института, sielom.ru">
           <svg class="settings__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M7 3H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9M9.5 2.5h4v4M13 3 7.5 8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="settings__label">Официальное расписание</span>
         </a>
@@ -168,6 +168,7 @@
     <!-- Расписание -->
     <main class="week-wrap">
       <div class="week" id="week"></div>
+      <p class="stale-note" id="staleNote" role="status" hidden></p>
     </main>
     </div>
   </div>
@@ -240,6 +241,7 @@
     </form>
   </dialog>
 
+  <script src="config.js?v=24"></script>
   <script src="app.js?v=24"></script>
 </body>
 </html>

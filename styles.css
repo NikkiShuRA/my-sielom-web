@@ -697,11 +697,27 @@ svg { flex-shrink: 0; }
    Расписание — общая обёртка
    ========================================================= */
 .week-wrap {
+  position: relative;
   flex: 1; min-width: 0; min-height: 0;
   background: var(--c-bg);
   border-radius: var(--r-2xl);
   box-shadow: var(--sh-xs);
   overflow: hidden;
+}
+/* Сервер не ответил, показано сохранённое: плашка поверх расписания, чтобы не сдвигать сетку */
+.stale-note {
+  position: absolute; z-index: 5; left: 50%; bottom: 12px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  width: max-content; max-width: calc(100% - 24px); margin: 0;
+  padding: 6px 6px 6px 12px; border-radius: 999px;
+  background: var(--c-warn-bg); color: var(--c-warn); border: 1px solid var(--c-warn-line);
+  box-shadow: var(--sh-sm); font-size: 13px; line-height: 1.3;
+}
+.stale-note[hidden] { display: none; }
+.stale-note svg { flex: none; }
+.stale-note__btn {
+  flex: none; padding: 5px 12px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--c-warn); color: var(--c-warn-bg); font: inherit; font-weight: 600;
 }
 .week {
   height: 100%;

@@ -3,7 +3,7 @@
  * Copyright © 2026 NikkiShuRA · https://github.com/NikkiShuRA/my-sielom-web
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-// Статика + прокси к sielom.ru schedule API и strapi.sielom.ru (CORS-обход).
+// Статика + прокси к API из config.js. Сайту прокси не нужен (API отдают CORS), он для отладки из curl и инструментов.
 // Запуск: node server.js  →  http://localhost:5500
 const http = require("node:http");
 const fs = require("node:fs/promises");
@@ -14,12 +14,10 @@ const PORT = Number(process.env.PORT) || 5500;
 const CACHE_TTL = 5 * 60 * 1000;
 const ROOT = __dirname;
 
-const ROUTES = [
-  // /schedule/api/groups → https://sielom.ru/schedule/api/groups (полный путь)
-  { prefix: "/schedule/api/", upstream: "https://sielom.ru", strip: "" },
-  // /strapi/api/employees → https://strapi.sielom.ru/api/employees (убираем /strapi)
-  { prefix: "/strapi/",       upstream: "https://strapi.sielom.ru", strip: "/strapi" },
-];
+const SOURCES = require("./config.js");
+
+// /api/<сервис>/<путь> → адреса сервиса по порядку: /api/schedule/groups → https://timetable.sielom.ru/api/groups
+const ROUTES = Object.entries(SOURCES).map(([name, s]) => ({ prefix: `/api/${name}/`, upstreams: s.mirrors.map((m) => m.base) }));
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -38,29 +36,36 @@ const HIDDEN = /^(\.|node_modules|server\.js$)/;
 
 const cache = new Map(); // cacheKey → { at, status, type, body }
 
-async function proxy(req, res, upstream, key) {
-  const cacheKey = upstream + key;
+// Как и сайт, идём на резерв, только если адрес не ответил или отдал не JSON (сломан, переехал), а не на обычную ошибку API
+async function proxy(req, res, prefix, upstreams, key) {
+  const cacheKey = prefix + key;
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_TTL) return send(res, hit.status, hit.type, hit.body, "HIT");
 
-  try {
-    const r = await fetch(upstream + key, {
-      headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(20000),
-    });
-    const body = Buffer.from(await r.arrayBuffer());
-    const type = r.headers.get("content-type") || "application/json";
-    if (r.ok) cache.set(cacheKey, { at: Date.now(), status: r.status, type, body });
-    send(res, r.status, type, body, "MISS");
-  } catch (err) {
-    if (hit) return send(res, hit.status, hit.type, hit.body, "STALE");
-    send(res, 502, "application/json", JSON.stringify({ error: "upstream_unavailable", detail: String(err.message || err) }));
+  const tried = [];
+  for (const upstream of upstreams) {
+    try {
+      const r = await fetch(upstream + key, {
+        headers: { accept: "application/json" },
+        signal: AbortSignal.timeout(20000),
+      });
+      const type = r.headers.get("content-type") || "";
+      if (!/json/i.test(type) || r.status >= 500) { tried.push(`${upstream}: HTTP ${r.status} ${type}`); continue; }
+      const body = Buffer.from(await r.arrayBuffer());
+      if (r.ok) cache.set(cacheKey, { at: Date.now(), status: r.status, type, body });
+      return send(res, r.status, type, body, "MISS", upstream);
+    } catch (err) {
+      tried.push(`${upstream}: ${err.cause?.code || err.message || err}`);
+    }
   }
+  if (hit) return send(res, hit.status, hit.type, hit.body, "STALE");
+  send(res, 502, "application/json", JSON.stringify({ error: "upstream_unavailable", tried }));
 }
 
-function send(res, status, type, body, cacheState) {
+function send(res, status, type, body, cacheState, upstream) {
   const headers = { "content-type": type, "access-control-allow-origin": "*" };
   if (cacheState) headers["x-cache"] = cacheState;
+  if (upstream) headers["x-upstream"] = upstream;
   res.writeHead(status, headers);
   res.end(body);
 }
@@ -107,10 +112,10 @@ async function serveStatic(res, pathname) {
 http.createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "text/plain; charset=utf-8", "Method not allowed");
-  for (const { prefix, upstream, strip } of ROUTES) {
+  for (const { prefix, upstreams } of ROUTES) {
     if (url.pathname.startsWith(prefix)) {
-      const key = url.pathname.slice(strip.length) + url.search;
-      return proxy(req, res, upstream, key);
+      const key = url.pathname.slice(prefix.length - 1) + url.search;
+      return proxy(req, res, prefix, upstreams, key);
     }
   }
   if (url.pathname === "/versions.json") return sendVersions(res);

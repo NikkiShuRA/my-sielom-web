@@ -10,11 +10,13 @@ assemble() {
   git archive "$ref" | tar -x -C "$src"
   mkdir -p "$out/about"
   (cd "$src" && cp -r index.html demo.html app.js styles.css fonts.css favicon.ico manifest.webmanifest assets "$OLDPWD/$out/")
+  # config.js с адресами API появился после 0.3.0, в старых релизах его нет
+  if [ -f "$src/config.js" ]; then cp "$src/config.js" "$out/"; fi
   cp -r "$src/docs/." "$out/about/"
   # Версия в адресах стилей и скрипта: браузер не покажет новую разметку со старыми файлами из кеша
   local v
   v="$(git rev-parse --short=7 "$ref^{commit}")"
-  sed -i -E "s#(styles\.css|fonts\.css)\"#\1?v=$v\"#; s#app\.js\?v=[0-9a-z]+#app.js?v=$v#" "$out/index.html"
+  sed -i -E "s#(styles\.css|fonts\.css)\"#\1?v=$v\"#; s#(app|config)\.js\?v=[0-9a-z]+#\1.js?v=$v#g" "$out/index.html"
   grep -n "?v=" "$out/index.html"
   rm -rf "$src"
 }

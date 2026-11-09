@@ -266,7 +266,8 @@
         mem["sielom.view"] = JSON.stringify(P.view);
         if (P.subject === "building") mem["sielom.selection"] = ${JSON.stringify(JSON.stringify(BUILDING))};
         Storage.prototype.getItem = function (k) { return k in mem ? mem[k] : null; };
-        Storage.prototype.setItem = function (k, v) { mem[k] = String(v); };
+        // сохранённые на случай без связи ответы не запоминаем: иначе сценарий «API не отвечает» показал бы их, а не ошибку
+        Storage.prototype.setItem = function (k, v) { if (!k.startsWith("sielom.lastgood")) mem[k] = String(v); };
         Storage.prototype.removeItem = function (k) { delete mem[k]; };
         const _f = window.fetch.bind(window);
         const json = (d) => new Response(JSON.stringify(d), { headers: { "content-type": "application/json" } });
